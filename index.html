@@ -1,0 +1,2419 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YMS 월말평가 인쇄 및 편집 관리 시스템</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Inter:wght=300;400;500;600;700;800&family=Noto+Sans+KR:wght=300;400;500;700;900&family=Nanum+Myeongjo:wght=400;700;800&display=swap');
+        
+        body {
+            font-family: 'Noto Sans KR', 'Inter', sans-serif;
+        }
+
+        /* Realistic A4 Paper Live Preview styling for Screen */
+        .paper-preview {
+            background-color: white;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            color: #111827;
+            border: 1px solid #e5e7eb;
+            transition: all 0.3s ease;
+        }
+
+        /* Custom handwriting dotted lines for paper translations */
+        .writing-line {
+            border-bottom: 1px dotted #6b7280;
+            height: 2.2rem;
+            margin-top: 0.5rem;
+            position: relative;
+        }
+        
+        /* Teacher Answer view coloring */
+        .teacher-answer {
+            color: #dc2626 !important;
+            font-weight: bold;
+            font-family: 'Nanum Myeongjo', serif;
+        }
+
+        /* Scrollbar custom style */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Junior Mode Custom Design Override */
+        .junior-mode {
+            font-size: 14px !important;
+        }
+        .junior-mode h2 {
+            font-family: 'Gaegu', 'Noto Sans KR', sans-serif;
+            font-size: 26px !important;
+            font-weight: 800 !important;
+        }
+        .junior-mode h3 {
+            font-family: 'Gaegu', 'Noto Sans KR', sans-serif;
+            font-size: 18px !important;
+            border-radius: 12px !important;
+            padding: 8px 14px !important;
+            border: 2px solid #334155 !important;
+            background-color: #f8fafc !important;
+        }
+        .junior-mode p {
+            font-size: 13.5px !important;
+            line-height: 1.9 !important;
+        }
+        .junior-mode .writing-line {
+            height: 2.8rem !important;
+            border-bottom: 2px dashed #94a3b8 !important;
+            margin-top: 0.8rem !important;
+        }
+        .junior-mode .text-slate-900 {
+            font-size: 14.5px !important;
+        }
+
+        /* Loading Spinner Animation */
+        .spinner-glow {
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+            animation: pulse-glow 2s infinite ease-in-out;
+        }
+        @keyframes pulse-glow {
+            0%, 100% { transform: scale(1); opacity: 0.9; }
+            50% { transform: scale(1.05); opacity: 1; }
+        }
+
+        /* Print media styles */
+        @media print {
+            body {
+                background: white !important;
+                color: black !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .paper-preview {
+                box-shadow: none !important;
+                border: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+            .print-page-break {
+                page-break-before: always !important;
+                break-before: page !important;
+                height: 0 !important;
+                margin: 0 !important;
+                border: none !important;
+            }
+            .avoid-break {
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
+            .writing-line {
+                border-bottom: 1px dotted #4b5563 !important;
+            }
+            .junior-mode .writing-line {
+                border-bottom: 2px dashed #4b5563 !important;
+            }
+            .page-break-indicator {
+                display: none !important;
+            }
+            /* Preserve background colors and SVG details for printing */
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-800 pb-16 transition-colors duration-300">
+
+    <!-- AI Generation Loading Modal Overlay -->
+    <div id="ai-loading-overlay" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[200] flex flex-col items-center justify-center hidden">
+        <div class="bg-slate-900 border border-slate-800 p-8 rounded-2xl max-w-md w-full mx-4 shadow-2xl flex flex-col items-center space-y-5 text-center">
+            <div class="relative">
+                <div class="w-16 h-16 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
+                <i class="fa-solid fa-wand-magic-sparkles text-xl text-indigo-400 absolute inset-0 m-auto w-fit h-fit animate-bounce"></i>
+            </div>
+            <div class="space-y-2">
+                <h3 class="text-white font-bold text-lg flex items-center justify-center gap-2">
+                    <span>Gemini AI 시험지 마법 발동 중</span>
+                </h3>
+                <p id="ai-loading-step" class="text-xs text-indigo-300 font-semibold animate-pulse">지문 내용을 실시간 분석하여 문항을 출제하는 중...</p>
+                <p class="text-[10px] text-slate-500 leading-relaxed">선택하신 학년 수준에 적절한 명품 독해 지문 문항들을 구글 초거대 인공지능이 완벽하게 실시간 맞춤 구조화하고 있습니다. (약 5~10초 소요)</p>
+            </div>
+            <!-- Progress Bar -->
+            <div class="w-full bg-slate-850 h-2 rounded-full overflow-hidden">
+                <div class="bg-indigo-500 h-full rounded-full animate-[shimmer_2s_infinite_linear]" style="width: 85%; background-image: linear-gradient(90deg, #6366f1 0%, #a855f7 50%, #6366f1 100%);"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Navigation Bar (Hidden in Print) -->
+    <header class="no-print bg-slate-900 text-white shadow-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-indigo-600 p-2 rounded-lg text-white">
+                    <i class="fa-solid fa-graduation-cap text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-md font-bold tracking-tight flex items-center gap-2">
+                        <span>YMS 영어 학업성취도 평가 인쇄 시스템</span>
+                        <span class="text-[10px] bg-indigo-500 text-white font-semibold px-2 py-0.5 rounded-full">AI 마스터 v5.2</span>
+                    </h1>
+                    <p id="header-summary" class="text-[11px] text-slate-400 font-medium">지정된 문항 수에 맞게 실시간 배점이 조정됩니다.</p>
+                </div>
+            </div>
+
+            <!-- Global Action Controls -->
+            <div class="flex flex-wrap items-center gap-3">
+                <button onclick="generateAIQuestionsAllPassages()" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold px-3.5 py-2 rounded-lg text-xs transition flex items-center gap-1.5 shadow-md">
+                    <i class="fa-solid fa-wand-magic-sparkles text-amber-300 animate-pulse"></i>
+                    <span>🪄 전체 지문 기반 AI 문제 일괄 생성</span>
+                </button>
+
+                <button onclick="toggleTeacherDrawer()" id="btn-teacher-toggle" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-semibold px-3 py-2 rounded-lg text-xs transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-sliders text-amber-400"></i>
+                    <span>선생님 문제 편집기</span>
+                </button>
+                
+                <button onclick="triggerPrint()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-lg text-xs transition flex items-center gap-1.5 shadow-md">
+                    <i class="fa-solid fa-print"></i> PDF 다운로드 / 인쇄
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace Container -->
+    <main class="max-w-7xl mx-auto px-4 mt-6">
+        
+        <!-- Teacher Dashboard Drawer (Sliding/Collapsible Panel) -->
+        <div id="teacher-drawer" class="no-print hidden mb-6 bg-slate-900 text-slate-100 rounded-xl p-5 border border-slate-800 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h2 class="text-sm font-bold flex items-center gap-2 text-amber-400">
+                    <i class="fa-solid fa-gears"></i> 실시간 시험 문제 빌더 & 문항수 맞춤 관리 도구
+                </h2>
+                <div class="flex gap-2">
+                    <button onclick="generateAIQuestionsAllPassages()" class="bg-indigo-650 hover:bg-indigo-600 border border-indigo-500/50 text-white text-xs font-bold px-3 py-1.5 rounded transition flex items-center gap-1">
+                        <i class="fa-solid fa-wand-magic-sparkles text-amber-300 animate-pulse"></i> 전체 지문 AI 문제 일괄 출제
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Quick Paper Metadata Settings -->
+            <div class="grid grid-cols-2 md:grid-cols-8 gap-3 text-xs">
+                <div class="md:col-span-1">
+                    <label class="block text-slate-400 font-medium mb-1">대상 학년 레벨</label>
+                    <select id="config-level" onchange="changeLevel(this.value)" class="w-full bg-slate-800 border border-slate-700 rounded px-2.5 py-1.5 text-white focus:outline-none focus:border-indigo-500 font-bold text-amber-400">
+                        <option value="elementary_junior">초등 저학년 (2~4학년)</option>
+                        <option value="elementary">초등 고학년 (5~6학년)</option>
+                        <option value="middle" selected>중등부 (Middle)</option>
+                    </select>
+                </div>
+                <div class="md:col-span-1">
+                    <label class="block text-slate-400 font-medium mb-1">단어 문항수</label>
+                    <input type="number" id="config-vocab-count" value="20" min="5" max="30" step="5" oninput="changeVocabCount(this.value)" class="w-full bg-slate-800 border border-slate-700 rounded px-2.5 py-1.5 text-white font-bold">
+                </div>
+                <div class="md:col-span-1">
+                    <label class="block text-slate-400 font-medium mb-1">단어 출제방식</label>
+                    <select id="config-vocab-type" onchange="changeVocabType(this.value)" class="w-full bg-slate-800 border border-slate-700 rounded px-2.5 py-1.5 text-white font-bold text-amber-400">
+                        <option value="mean">뜻 적기</option>
+                        <option value="eng">영어 적기</option>
+                        <option value="mixed">뜻,영어 같이</option>
+                        <option value="matching" selected>그림-단어 선 잇기</option>
+                    </select>
+                </div>
+                <div class="md:col-span-1">
+                    <label class="block text-slate-400 font-medium mb-1">독해 지문수</label>
+                    <input type="number" id="config-reading-count" value="5" min="1" max="5" oninput="changeReadingCount(this.value)" class="w-full bg-slate-800 border border-slate-700 rounded px-2.5 py-1.5 text-white font-bold">
+                </div>
+                <div class="md:col-span-1">
+                    <label class="block text-slate-400 font-medium mb-1">영한해석 문항수</label>
+                    <input type="number" id="config-translation-count" value="10" min="5" max="15" oninput="changeTranslationCount(this.value)" class="w-full bg-slate-800 border border-slate-700 rounded px-2.5 py-1.5 text-white font-bold">
+                </div>
+                <div class="md:col-span-1">
+                    <label class="block text-slate-400 font-medium mb-1">어순배열 문항수</label>
+                    <input type="number" id="config-unscramble-count" value="10" min="5" max="15" oninput="changeUnscrambleCount(this.value)" class="w-full bg-slate-800 border border-slate-700 rounded px-2.5 py-1.5 text-white font-bold">
+                </div>
+                <div class="md:col-span-1">
+                    <label class="block text-slate-400 font-medium mb-1">학원명</label>
+                    <input type="text" id="config-academy" value="YMS 어학원" oninput="syncHeaderData()" class="w-full bg-slate-800 border border-slate-700 rounded px-2.5 py-1.5 text-white">
+                </div>
+                <div class="md:col-span-1">
+                    <label class="block text-slate-400 font-medium mb-1">과목명</label>
+                    <input type="text" id="config-subject" value="영어 (English)" oninput="syncHeaderData()" class="w-full bg-slate-800 border border-slate-700 rounded px-2.5 py-1.5 text-white">
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                <div>
+                    <label class="block text-slate-400 font-medium mb-1">시험지 대제목</label>
+                    <input type="text" id="config-title" value="6월 중등부 영어 학업성취도 평가" oninput="syncHeaderData()" class="w-full bg-slate-800 border border-slate-700 rounded px-2.5 py-1.5 text-white">
+                </div>
+                <div>
+                    <label class="block text-slate-400 font-medium mb-1">인쇄 일자</label>
+                    <input type="text" id="config-date" value="2026. 06" oninput="syncHeaderData()" class="w-full bg-slate-800 border border-slate-700 rounded px-2.5 py-1.5 text-white">
+                </div>
+                <!-- Secure API Key Input Field -->
+                <div>
+                    <label class="block text-slate-400 font-medium mb-1 flex items-center justify-between">
+                        <span class="text-indigo-400 font-bold"><i class="fa-solid fa-key mr-1 text-amber-400"></i> Gemini API Key 설정 (선택)</span>
+                        <a href="https://aistudio.google.com/" target="_blank" class="text-[10px] text-slate-400 hover:text-indigo-400 transition" title="무료 발급 링크 이동">
+                            무료 발급받기 <i class="fa-solid fa-arrow-up-right-from-square text-[8px]"></i>
+                        </a>
+                    </label>
+                    <input type="password" id="config-api-key" oninput="saveApiKey(this.value)" placeholder="비워두셔도 Canvas 자체 키로 작동합니다..." class="w-full bg-slate-800 border border-slate-700 rounded px-2.5 py-1.5 text-white text-[11px] placeholder-slate-500 focus:outline-none focus:border-indigo-500 font-mono">
+                </div>
+            </div>
+
+            <!-- Tab Controls for Bulk Editors -->
+            <div class="border-t border-slate-800 pt-3">
+                <div class="flex gap-1.5 border-b border-slate-800 mb-3" id="editor-tabs">
+                    <button onclick="switchEditorTab('vocab')" id="tab-vocab" class="px-3 py-1.5 text-xs font-semibold text-white border-b-2 border-indigo-500 bg-slate-800 rounded-t-md">단어</button>
+                    <button onclick="switchEditorTab('reading')" id="tab-reading" class="px-3 py-1.5 text-xs font-semibold text-slate-400 hover:text-white rounded-t-md">독해 지문 및 AI 문항</button>
+                    <button onclick="switchEditorTab('translation')" id="tab-translation" class="px-3 py-1.5 text-xs font-semibold text-slate-400 hover:text-white rounded-t-md">영한해석</button>
+                    <button onclick="switchEditorTab('unscramble')" id="tab-unscramble" class="px-3 py-1.5 text-xs font-semibold text-slate-400 hover:text-white rounded-t-md">어순배열</button>
+                </div>
+
+                <!-- Vocab Editor Panel -->
+                <div id="panel-vocab" class="editor-panel space-y-2">
+                    <p class="text-xs text-slate-400 leading-relaxed">
+                        엑셀(Excel)에서 영어 열과 뜻 열을 각각 복사해서 아래의 해당 입력칸에 따로따로 붙여넣으실 수 있습니다.
+                    </p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                        <div>
+                            <label class="block text-[11px] text-slate-300 font-bold mb-1"><i class="fa-solid fa-font text-indigo-400 mr-1.5"></i>영어 단어 목록 (줄바꿈으로 구분)</label>
+                            <textarea id="edit-vocab-eng" rows="6" onpaste="handleVocabEngPaste(event)" placeholder="영어 단어를 입력하거나 복사해 넣으세요." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 font-mono text-xs text-emerald-400 focus:outline-none focus:border-indigo-500 placeholder-slate-700 leading-relaxed"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-slate-300 font-bold mb-1"><i class="fa-solid fa-language text-indigo-400 mr-1.5"></i>한글 뜻 목록 (줄바꿈으로 구분)</label>
+                            <textarea id="edit-vocab-kor" rows="6" placeholder="한글 뜻을 입력하거나 복사해 넣으세요." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 font-mono text-xs text-emerald-400 focus:outline-none focus:border-indigo-500 placeholder-slate-700 leading-relaxed"></textarea>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center pt-1">
+                        <span class="text-[10px] text-slate-500">지정한 문항 수에 맞게 상위 행부터 순서대로 출제됩니다.</span>
+                        <div class="flex gap-2">
+                            <button onclick="generateAIVocab()" class="bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold px-3 py-1.5 rounded transition flex items-center gap-1 shadow-md">
+                                <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i> 🪄 AI 단어장 새로 생성
+                            </button>
+                            <button onclick="applyVocabChange()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-1.5 rounded transition">단어 데이터 반영</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reading Editor Panel -->
+                <div id="panel-reading" class="editor-panel hidden space-y-4">
+                    <div class="bg-slate-950/60 p-3 rounded-lg border border-slate-850 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
+                        <div class="space-y-1">
+                            <p class="font-bold text-indigo-400 flex items-center gap-1.5"><i class="fa-solid fa-lightbulb"></i> 지문별 수동 입력 & AI 스마트 문제 출제 결합 시스템</p>
+                            <p class="text-[11px] text-slate-400">선생님이 지문을 변경하면 AI가 지문의 난이도를 분석해 8개 핵심 유형 중 지문에 가장 부합하는 고품질 문제 3가지를 자동 출제합니다.</p>
+                        </div>
+                        <button onclick="generateAIReadingPassages()" class="bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold px-3.5 py-2 rounded-lg transition flex items-center gap-1 shadow-md shrink-0">
+                            <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i> 🪄 지문+문제 AI 전체 새로 생성
+                        </button>
+                    </div>
+                    <div id="reading-editor-list" class="space-y-4 max-h-96 overflow-y-auto pr-2">
+                        <!-- Generated Dynamically -->
+                    </div>
+                    <div class="flex justify-end pt-2 border-t border-slate-800">
+                        <button onclick="applyReadingChange()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-1.5 rounded transition">독해 지문 전체 적용</button>
+                    </div>
+                </div>
+
+                <!-- Translation Editor Panel -->
+                <div id="panel-translation" class="editor-panel hidden space-y-2">
+                    <p class="text-xs text-slate-400">한 줄에 하나씩 <strong class="text-indigo-400">영어문장=한국어해석</strong> 형식으로 입력하세요.</p>
+                    <textarea id="edit-translation" rows="6" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 font-mono text-xs text-emerald-400 focus:outline-none"></textarea>
+                    <div class="flex justify-between items-center pt-1">
+                        <span class="text-[10px] text-slate-500">지정한 영한해석 문항 수에 맞게 상위 행부터 적용됩니다.</span>
+                        <div class="flex gap-2">
+                            <button onclick="generateAITranslation()" class="bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold px-3 py-1.5 rounded transition flex items-center gap-1 shadow-md">
+                                <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i> 🪄 AI 해석문 자동 생성
+                            </button>
+                            <button onclick="applyTranslationChange()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-1.5 rounded transition">영한해석 데이터 반영</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Unscramble Editor Panel -->
+                <div id="panel-unscramble" class="editor-panel hidden space-y-2">
+                    <p class="text-xs text-slate-400">한 줄에 하나씩 <strong class="text-indigo-400">영어완성문장=한국어힌트</strong> 형식으로 입력하세요.</p>
+                    <textarea id="edit-unscramble" rows="6" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 font-mono text-xs text-emerald-400 focus:outline-none"></textarea>
+                    <div class="flex justify-between items-center pt-1">
+                        <span class="text-[10px] text-slate-500">인쇄 시 핵심 단어 카드들이 알아서 임의로 흐트러져 시험지에 표시됩니다.</span>
+                        <div class="flex gap-2">
+                            <button onclick="generateAIUnscramble()" class="bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold px-3 py-1.5 rounded transition flex items-center gap-1 shadow-md">
+                                <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i> 🪄 AI 배열문 자동 생성
+                            </button>
+                            <button onclick="applyUnscrambleChange()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-1.5 rounded transition">어순배열 데이터 반영</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Global Action Tools -->
+            <div class="flex justify-between items-center pt-3 border-t border-slate-800 text-xs font-semibold">
+                <span class="text-amber-500"><i class="fa-solid fa-triangle-exclamation"></i> 주의: 페이지를 완전히 나가기 전에 아래 보관하기 버튼을 꼭 누르세요.</span>
+                <div class="flex gap-2">
+                    <button onclick="saveToLocalStorage()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 px-3 py-1.5 rounded-lg transition"><i class="fa-solid fa-floppy-disk mr-1"></i> 변경안 캐시 보관</button>
+                    <button onclick="resetToDemo()" class="bg-rose-950/40 hover:bg-rose-950 text-rose-300 border border-rose-900/50 px-3 py-1.5 rounded-lg transition">기본 데모 세트 복원</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: PAPER PRINT PREVIEW MODE (A4 PAPER PREVIEW) -->
+        <div id="view-paper-preview" class="flex flex-col lg:flex-row gap-6 justify-center">
+            
+            <!-- Left Side Control Column (Fixed Helper in desktop) -->
+            <div class="lg:w-80 space-y-4 no-print flex-shrink-0">
+                <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm space-y-4 sticky top-24">
+                    
+                    <!-- New Smart AI Helper Banner -->
+                    <div class="bg-gradient-to-r from-purple-500 to-indigo-600 p-4 rounded-xl text-white space-y-2.5 shadow-md">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-wand-magic-sparkles text-amber-300 text-sm animate-bounce"></i>
+                            <h4 class="text-xs font-extrabold tracking-wide">Gemini AI 일괄 출제</h4>
+                        </div>
+                        <p class="text-[10px] text-purple-100 leading-relaxed">선생님이 지문을 먼저 다 입력한 뒤, 이 버튼을 누르면 AI가 모든 지문을 한 번에 분석해 15문제를 일괄 생성해 줍니다.</p>
+                        <button onclick="generateAIQuestionsAllPassages()" class="w-full bg-white text-indigo-700 font-extrabold text-[11px] py-2 rounded-lg hover:bg-indigo-50 transition shadow">
+                            전체 지문 AI 일괄 출제 시작
+                        </button>
+                    </div>
+
+                    <h3 class="text-xs font-extrabold text-slate-900 pb-2 border-b flex items-center justify-between">
+                        <span>인쇄용 퀵 설정 바</span>
+                        <i class="fa-solid fa-print text-indigo-600"></i>
+                    </h3>
+                    
+                    <!-- School Level & Word Count Controls in Sidebar -->
+                    <div class="space-y-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                        <div class="space-y-1">
+                            <label class="block text-[10px] text-slate-500 font-bold">평가 대상 학년</label>
+                            <div class="grid grid-cols-3 gap-1">
+                                <button onclick="changeLevel('elementary_junior')" id="sidebar-btn-elem-jr" class="py-1 px-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded font-semibold text-[10px] transition truncate">초등 저(2-4)</button>
+                                <button onclick="changeLevel('elementary')" id="sidebar-btn-elem" class="py-1 px-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded font-semibold text-[10px] transition truncate">초등 고(5-6)</button>
+                                <button onclick="changeLevel('middle')" id="sidebar-btn-mid" class="py-1 px-1 bg-indigo-600 text-white font-bold rounded shadow text-[10px] transition truncate">중등부</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Dynamic Vocab Count Slider -->
+                        <div class="space-y-1">
+                            <label class="block text-[10px] text-slate-500 font-bold">단어 문항 수</label>
+                            <div class="flex items-center gap-2">
+                                <input type="range" id="sidebar-range-vocab" min="5" max="30" step="5" value="20" oninput="changeVocabCount(this.value)" class="w-full accent-indigo-600">
+                                <span id="sidebar-val-vocab" class="text-xs font-bold text-indigo-600 w-8 text-right">20개</span>
+                            </div>
+                        </div>
+
+                        <!-- Vocab Test Type Selector -->
+                        <div class="space-y-1">
+                            <label class="block text-[10px] text-slate-500 font-bold">단어 출제 방식</label>
+                            <select id="sidebar-vocab-type" onchange="changeVocabType(this.value)" class="w-full bg-white border border-sidebar-300 rounded p-1.5 text-xs font-semibold text-slate-700">
+                                <option value="mean">뜻 적기 (영어 → 한글)</option>
+                                <option value="eng">영어 적기 (한글 → 영어)</option>
+                                <option value="mixed">뜻, 영어 같이 (혼합)</option>
+                                <option value="matching" selected>그림-단어 선 잇기 (Matching)</option>
+                            </select>
+                        </div>
+
+                        <!-- Dynamic Reading Passage Count Slider -->
+                        <div class="space-y-1">
+                            <label class="block text-[10px] text-slate-500 font-bold">독해 지문 수</label>
+                            <div class="flex items-center gap-2">
+                                <input type="range" id="sidebar-range-reading" min="1" max="5" step="1" value="5" oninput="changeReadingCount(this.value)" class="w-full accent-indigo-600">
+                                <span id="sidebar-val-reading" class="text-xs font-bold text-indigo-600 w-8 text-right">5개</span>
+                            </div>
+                        </div>
+
+                        <!-- Dynamic Translation Count Slider -->
+                        <div class="space-y-1">
+                            <label class="block text-[10px] text-slate-500 font-bold">영한해석 문항 수</label>
+                            <div class="flex items-center gap-2">
+                                <input type="range" id="sidebar-range-translation" min="5" max="15" step="1" value="10" oninput="changeTranslationCount(this.value)" class="w-full accent-indigo-600">
+                                <span id="sidebar-val-translation" class="text-xs font-bold text-indigo-600 w-8 text-right">10개</span>
+                            </div>
+                        </div>
+
+                        <!-- Dynamic Unscramble Count Slider -->
+                        <div class="space-y-1">
+                            <label class="block text-[10px] text-slate-500 font-bold">어순배열 문항 수</label>
+                            <div class="flex items-center gap-2">
+                                <input type="range" id="sidebar-range-unscramble" min="5" max="15" step="1" value="10" oninput="changeUnscrambleCount(this.value)" class="w-full accent-indigo-600">
+                                <span id="sidebar-val-unscramble" class="text-xs font-bold text-indigo-600 w-8 text-right">10개</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Student / Teacher Answer Sheets Toggle -->
+                    <div class="space-y-1.5">
+                        <label class="block text-[10px] text-slate-500 font-bold">시험지 출력 모드</label>
+                        <div class="grid grid-cols-2 gap-1.5">
+                            <button onclick="togglePaperAnswerView(false)" id="paper-btn-student" class="py-1.5 bg-indigo-600 text-white font-bold text-xs rounded transition shadow">학생용 시험지</button>
+                            <button onclick="togglePaperAnswerView(true)" id="paper-btn-teacher" class="py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded transition">교사용 정답지</button>
+                        </div>
+                    </div>
+
+                    <!-- Custom Page Breaks Controllers -->
+                    <div class="space-y-2 pt-2 border-t text-[11px] text-slate-600">
+                        <div class="flex items-center gap-2 font-bold text-slate-800">
+                            <i class="fa-solid fa-scissors text-amber-500 text-xs"></i>
+                            <span>인쇄 페이지 수동 조절</span>
+                        </div>
+                        <p class="text-[10px] text-slate-400">특정 대문항의 시작 위치를 강제로 다음 페이지 첫머리로 넘겨 인쇄 구도를 예쁘게 교정할 수 있습니다.</p>
+                        <div class="space-y-1.5 pl-0.5">
+                            <button onclick="togglePageBreak('break-reading')" id="btn-break-reading" class="w-full text-left bg-slate-50 hover:bg-slate-100 p-2 rounded border border-slate-200 text-[10px] font-medium flex justify-between items-center transition">
+                                <span>[II] 독해 시작점 분리</span>
+                                <i class="fa-solid fa-plus-circle text-slate-400"></i>
+                            </button>
+                            <button onclick="togglePageBreak('break-translation')" id="btn-break-translation" class="w-full text-left bg-slate-50 hover:bg-slate-100 p-2 rounded border border-slate-200 text-[10px] font-medium flex justify-between items-center transition">
+                                <span>[III] 해석 시작점 분리</span>
+                                <i class="fa-solid fa-plus-circle text-slate-400"></i>
+                            </button>
+                            <button onclick="togglePageBreak('break-unscramble')" id="btn-break-unscramble" class="w-full text-left bg-slate-50 hover:bg-slate-100 p-2 rounded border border-slate-200 text-[10px] font-medium flex justify-between items-center transition">
+                                <span>[IV] 배열 시작점 분리</span>
+                                <i class="fa-solid fa-plus-circle text-slate-400"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="pt-2 border-t">
+                        <button onclick="triggerPrint()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2.5 rounded-lg transition shadow-md flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-print"></i> PDF 다운로드 / 인쇄
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Realistic Printable A4 Sheet Render Frame -->
+            <div id="print-sheet" class="paper-preview w-full max-w-[210mm] min-h-[297mm] p-8 md:p-12 relative bg-white transition-all duration-300">
+                
+                <!-- PAPER DOUBLE-BORDER HEADER -->
+                <div class="border-4 double border-double border-slate-900 p-4 mb-6">
+                    <div class="flex justify-between items-center border-b border-slate-900 pb-2 mb-3">
+                        <div class="flex items-center gap-3">
+                            <img src="KakaoTalk_20190807_150803295.jpg" alt="YMS Logo" class="h-14 w-auto object-contain" onerror="this.style.display='none'">
+                            <span id="paper-academy-display" class="font-bold text-[12px] tracking-wider text-slate-700">YMS 어학원</span>
+                        </div>
+                        <span id="paper-date-display" class="text-[10px] font-semibold text-slate-500">2026. 06</span>
+                    </div>
+                    
+                    <h2 id="paper-title-display" class="text-center font-extrabold text-xl tracking-tight my-1 text-slate-900 font-serif">
+                        6월 초등 저학년 영어 학업성취도 평가
+                    </h2>
+                    
+                    <!-- Modified Header Layout: Left-aligned Subject, Right-aligned Name -->
+                    <div class="flex justify-between items-center text-[11px] font-semibold mt-4 pt-2 border-t border-dashed border-slate-400">
+                        <div class="w-1/2 text-left">
+                            과목명: <span id="paper-subject-display" class="font-bold">영어 (English)</span>
+                        </div>
+                        <div class="w-1/2 text-right flex justify-end items-center">
+                            성명: <span class="border-b border-slate-400 w-36 inline-block ml-1">&nbsp;</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DYNAMIC EXAM SECTIONS (FOR PRINTING) -->
+                <div class="space-y-6" id="paper-content-area">
+                    
+                    <!-- Section 1 Rendering (Vocabulary) -->
+                    <div class="avoid-break">
+                        <h3 class="font-bold text-xs bg-slate-100 px-2 py-1 border-l-4 border-slate-800 mb-3 flex justify-between items-center">
+                            <div class="flex flex-col">
+                                <span id="paper-vocab-title-display" class="font-bold">[I] Vocabulary Evaluation (1 - 20)</span>
+                                <span id="paper-vocab-score-display" class="text-[9px] font-normal text-slate-500">각 5.0점 [총 100점]</span>
+                            </div>
+                            <div class="flex items-center gap-1 text-rose-600 font-bold border border-rose-300 px-1.5 py-0.5 rounded bg-rose-50/50 text-[10px]">
+                                <span>득점:</span>
+                                <span class="border-b border-rose-400 w-7 inline-block text-center">&nbsp;</span>
+                                <span>/ 100</span>
+                            </div>
+                        </h3>
+                        <p id="paper-vocab-instruction-display" class="text-[11px] text-slate-600 mb-3 font-serif">※ 다음 제시어의 알맞은 의미(뜻 또는 영어 스펠링)를 기입란에 서술하시오.</p>
+                        
+                        <div id="paper-vocab-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-[11px] font-serif">
+                            <!-- Populated Dynamically -->
+                        </div>
+                        
+                        <!-- Vocabulary Line-Matching Grid (Alternative View) -->
+                        <div id="paper-vocab-matching-container" class="hidden space-y-6">
+                            <!-- Populated Dynamically with sets of 5 matching blocks -->
+                        </div>
+                    </div>
+
+                    <!-- Page break spacer container 1 -->
+                    <div id="break-reading" class="print-page-break"></div>
+
+                    <!-- Section 2 Rendering (Reading Comprehension) -->
+                    <div>
+                        <h3 class="font-bold text-xs bg-slate-100 px-2 py-1 border-l-4 border-slate-800 mb-3 flex justify-between items-center">
+                            <div class="flex flex-col">
+                                <span id="paper-reading-title-display" class="font-bold">[II] Reading Comprehension</span>
+                                <span id="paper-reading-score-display" class="text-[9px] font-normal text-slate-500">지문별 독해 문항 배점 [총 100점]</span>
+                            </div>
+                            <div class="flex items-center gap-1 text-rose-600 font-bold border border-rose-300 px-1.5 py-0.5 rounded bg-rose-50/50 text-[10px]">
+                                <span>득점:</span>
+                                <span class="border-b border-rose-400 w-7 inline-block text-center">&nbsp;</span>
+                                <span>/ 100</span>
+                            </div>
+                        </h3>
+                        <p class="text-[11px] text-slate-600 mb-3 font-serif">※ 다음 독해 문항들을 읽고 질문에 알맞은 답을 골라 마킹하십시오.</p>
+                        
+                        <div id="paper-reading-list" class="space-y-6">
+                            <!-- Populated Dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Page break spacer container 2 -->
+                    <div id="break-translation" class="print-page-break"></div>
+
+                    <!-- Section 3 Rendering (Translation) -->
+                    <div>
+                        <h3 class="font-bold text-xs bg-slate-100 px-2 py-1 border-l-4 border-slate-800 mb-3 flex justify-between items-center">
+                            <div class="flex flex-col">
+                                <span id="paper-translation-title-display" class="font-bold">[III] Sentence Translation</span>
+                                <span id="paper-translation-score-display" class="text-[9px] font-normal text-slate-500">각 10점 [총 100점]</span>
+                            </div>
+                            <div class="flex items-center gap-1 text-rose-600 font-bold border border-rose-300 px-1.5 py-0.5 rounded bg-rose-50/50 text-[10px]">
+                                <span>득점:</span>
+                                <span class="border-b border-rose-400 w-7 inline-block text-center">&nbsp;</span>
+                                <span>/ 100</span>
+                            </div>
+                        </h3>
+                        <p class="text-[11px] text-slate-600 mb-3 font-serif">※ 다음 영어 원문을 읽고 매끄러운 한글 한국어 해설 번역문을 완성해 작성하시오.</p>
+                        
+                        <div id="paper-translation-list" class="space-y-4 text-[11px] font-serif">
+                            <!-- Populated Dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Page break spacer container 3 -->
+                    <div id="break-unscramble" class="print-page-break"></div>
+
+                    <!-- Section 4 Rendering (Sentence Unscramble) -->
+                    <div>
+                        <h3 class="font-bold text-xs bg-slate-100 px-2 py-1 border-l-4 border-slate-800 mb-3 flex justify-between items-center">
+                            <div class="flex flex-col">
+                                <span id="paper-unscramble-title-display" class="font-bold">[IV] Sentence Unscrambling Practice</span>
+                                <span id="paper-unscramble-score-display" class="text-[9px] font-normal text-slate-500">각 10점 [총 100점]</span>
+                            </div>
+                            <div class="flex items-center gap-1 text-rose-600 font-bold border border-rose-300 px-1.5 py-0.5 rounded bg-rose-50/50 text-[10px]">
+                                <span>득점:</span>
+                                <span class="border-b border-rose-400 w-7 inline-block text-center">&nbsp;</span>
+                                <span>/ 100</span>
+                            </div>
+                        </h3>
+                        <p class="text-[11px] text-slate-600 mb-3 font-serif">※ 각 한국어 뜻 힌트를 기반으로 주어진 핵심 단어들을 바르게 활용해 순서 배열 완성작을 만드시오.</p>
+                        
+                        <div id="paper-unscramble-list" class="space-y-4 text-[11px] font-serif">
+                            <!-- Populated Dynamically -->
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Paper Footer signature -->
+                <div class="border-t border-slate-400 text-center text-[9px] text-slate-500 mt-10 pt-4 font-serif">
+                    본 평가 문항의 저작권 및 소유권은 해당 교육기관에 귀속됩니다. 무단 복제·변형 배포를 일절 엄금합니다.
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Custom Modal Dialogs -->
+    <div id="custom-modal" class="no-print fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl transform scale-95 transition-transform duration-300 space-y-4">
+            <div class="flex items-center gap-3 border-b pb-3" id="modal-header-container">
+                <i id="modal-icon" class="fa-solid fa-circle-info text-2xl text-indigo-600"></i>
+                <h3 id="modal-title" class="text-md font-extrabold text-slate-950">알림</h3>
+            </div>
+            <p id="modal-message" class="text-xs text-slate-600 leading-relaxed"></p>
+            <div class="flex justify-end gap-2" id="modal-actions">
+                <button onclick="closeModal()" class="bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs px-4 py-2 rounded-lg transition">확인</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Toast Alert Panel -->
+    <div id="toast" class="no-print fixed bottom-6 right-6 bg-slate-900 text-slate-200 text-xs px-4 py-3 rounded-xl border border-slate-800 shadow-2xl flex items-center gap-2 transform translate-y-20 opacity-0 transition-all duration-300 z-[100]">
+        <i class="fa-solid fa-circle-check text-emerald-400 text-sm"></i>
+        <span id="toast-text">변경사항이 정상 저장되었습니다.</span>
+    </div>
+
+    <!-- CORE SYSTEM ENGINE SCRIPT -->
+    <script>
+        // STRICT GLOBAL STATE REGISTRATION
+        var isPaperTeacherMode = false;
+        var currentLevel = localStorage.getItem('monthly_exam_level') || 'elementary_junior';
+        
+        // Dynamic Counts
+        var vocabCount = parseInt(localStorage.getItem('monthly_exam_vocab_count')) || 20;
+        var vocabType = localStorage.getItem('monthly_exam_vocab_type') || 'matching';
+        var readingCount = parseInt(localStorage.getItem('monthly_exam_reading_count')) || 5;
+        var translationCount = parseInt(localStorage.getItem('monthly_exam_translation_count')) || 10;
+        var unscrambleCount = parseInt(localStorage.getItem('monthly_exam_unscramble_count')) || 10;
+        
+        var examData = null;
+        var apiKey = localStorage.getItem('monthly_exam_api_key') || '';
+
+        // Visual Emojis mapping dictionary for matching test
+        const emojiDictionary = {
+            "apple": "🍎", "사과": "🍎",
+            "banana": "🍌", "바나나": "🍌",
+            "cat": "🐱", "고양이": "🐱",
+            "dog": "🐶", "개": "🐶", "강아지": "🐶",
+            "sun": "☀️", "태양": "☀️", "해": "☀️",
+            "tree": "🌳", "나무": "🌳",
+            "car": "🚗", "자동차": "🚗", "차": "🚗",
+            "book": "📖", "책": "📖",
+            "milk": "🥛", "우유": "🥛",
+            "fish": "🐟", "물고기": "🐟",
+            "bird": "🐦", "새": "🐦",
+            "ball": "⚽", "공": "⚽",
+            "cake": "🍰", "케이크": "🍰",
+            "hat": "🎩", "모자": "🎩",
+            "star": "⭐", "별": "⭐",
+            "flower": "🌸", "꽃": "🌸",
+            "pencil": "✏️", "연필": "✏️",
+            "chair": "🪑", "의자": "🪑",
+            "cup": "🥛", "컵": "🥛",
+            "clock": "⏰", "시계": "⏰",
+            "cloud": "☁️", "구름": "☁️",
+            "house": "🏠", "집": "🏠",
+            "school": "🏫", "학교": "🏫",
+            "bus": "🚌", "버스": "🚌",
+            "lion": "🦁", "사자": "🦁",
+            "bear": "🐻", "곰": "🐻",
+            "rabbit": "🐰", "토끼": "🐰",
+            "water": "💧", "물": "💧",
+            "desk": "🪑", "책상": "🪑",
+            "doctor": "🧑‍⚕️", "의사": "🧑‍⚕️",
+            "teacher": "🧑‍🏫", "선생님": "🧑‍🏫",
+            "happy": "😊", "행복한": "😊",
+            "winter": "❄️", "겨울": "❄️",
+            "summer": "☀️", "여름": "☀️",
+            "garden": "🏡", "정원": "🏡",
+            "friend": "🧑‍🤝‍🧑", "친구": "🧑‍🤝‍🧑",
+            "family": "👨‍👩‍👧‍👦", "가족": "👨‍👩‍👧‍👦",
+            "swim": "🏊", "수영하다": "🏊",
+            "animal": "🦁", "동물": "🦁",
+            "morning": "🌅", "아침": "🌅",
+            "yellow": "💛", "노란색": "💛",
+            "library": "📚", "도서관": "📚",
+            "holiday": "🎈", "공휴일": "🎈", "휴가": "🎈",
+            "fruit": "🍎", "과일": "🍎",
+            "kitchen": "🍳", "부엌": "🍳",
+            "concert": "🎵", "음악회": "🎵", "콘서트": "🎵",
+            "weather": "🌈", "날씨": "🌈",
+            "umbrella": "☔", "우산": "☔",
+            "running": "🏃", "달리기": "🏃",
+            "bridge": "🌉", "다리": "🌉",
+            "dinner": "🍽️", "저녁식사": "🍽️",
+            "picture": "🖼️", "사진": "🖼️", "그림": "🖼️",
+            "market": "🛒", "시장": "🛒"
+        };
+
+        // Fallback or dynamic emoji detection helper
+        function getEmojiForWord(word, mean) {
+            const w = (word || "").toLowerCase().trim();
+            const m = (mean || "").toLowerCase().trim();
+            
+            if (emojiDictionary[w]) return emojiDictionary[w];
+            if (emojiDictionary[m]) return emojiDictionary[m];
+            
+            for (let key in emojiDictionary) {
+                if (w.includes(key) || m.includes(key)) {
+                    return emojiDictionary[key];
+                }
+            }
+            const defaults = ["⭐", "✏️", "🎈", "🌟", "🍀", "🎨"];
+            const hash = w.length + m.length;
+            return defaults[hash % defaults.length];
+        }
+
+        // Helper to get Korean level text name
+        function getLevelName() {
+            if (currentLevel === 'elementary_junior') return "초등 저학년(2~4학년)";
+            if (currentLevel === 'elementary') return "초등 고학년(5~6학년)";
+            return "중등부";
+        }
+
+        // Multi-level Demo Dataset Model (Junior, Elementary & Middle)
+        const defaultExamData = {
+            elementary_junior: {
+                vocab: [
+                    { word: "apple", mean: "사과" },
+                    { word: "dog", mean: "개/강아지" },
+                    { word: "cat", mean: "고양이" },
+                    { word: "sun", mean: "해/태양" },
+                    { word: "tree", mean: "나무" },
+                    { word: "car", mean: "자동차" },
+                    { word: "book", mean: "책" },
+                    { word: "milk", mean: "우유" },
+                    { word: "fish", mean: "물고기" },
+                    { word: "bird", mean: "새" },
+                    { word: "ball", mean: "공" },
+                    { word: "cake", mean: "케이크" },
+                    { word: "hat", mean: "모자" },
+                    { word: "star", mean: "별" },
+                    { word: "flower", mean: "꽃" },
+                    { word: "pencil", mean: "연필" },
+                    { word: "chair", mean: "의자" },
+                    { word: "clock", mean: "시계" },
+                    { word: "cloud", mean: "구름" },
+                    { word: "house", mean: "집" },
+                    { word: "bus", mean: "버스" },
+                    { word: "lion", mean: "사자" },
+                    { word: "bear", mean: "곰" },
+                    { word: "rabbit", mean: "토끼" },
+                    { word: "water", mean: "물" },
+                    { word: "desk", mean: "책상" },
+                    { word: "umbrella", mean: "우산" },
+                    { word: "cup", mean: "컵" },
+                    { word: "dinner", mean: "저녁식사" },
+                    { word: "market", mean: "시장" }
+                ],
+                reading: [
+                    {
+                        passage: "Look at the sky! The sun is big and hot. ☀️ It is a beautiful day. Mimi, the cute white cat, is sleeping under the big green tree. A small blue bird is singing on the branch. Mimi opens her yellow eyes and wags her soft tail.",
+                        questions: [
+                            { q: "Mimi가 잠을 자고 있는 장소는 어디인가요?", type: "descriptive", questionCategory: "서술", choices: [], answer: null, answerText: "큰 초록색 나무 밑 (under the big green tree)", shuffledWords: [] },
+                            { q: "Mimi의 외모와 마음에 관한 설명 중 내용과 일치하지 않는 것은?", type: "mcq", questionCategory: "내용불일치", choices: ["날씨는 화창하고 아름답다.", "Mimi는 하얗고 귀여운 고양이다.", "나무 위에 파란 새가 노래를 하고 있다.", "Mimi는 노란색 눈을 가지고 있다.", "Mimi는 꼬리를 슬프게 흔들고 있다."], answer: 5, answerText: "", shuffledWords: [] },
+                            { q: "다음 단어들을 바르게 배열하여 문장을 완성하세요.", type: "unscramble", questionCategory: "배열", choices: [], answer: null, answerText: "Mimi opens her yellow eyes", shuffledWords: ["eyes", "her", "yellow", "Mimi", "opens"] }
+                        ]
+                    },
+                    {
+                        passage: "Today is my happy birthday! 🎂 My mom made a big sweet chocolate cake. My friends came to my house with pretty gifts. We played with a red ball in the garden. I got a blue pencil case and a cute teddy bear as my gifts.",
+                        questions: [
+                            { q: "위 글의 가장 적절한 제목은 무엇인가요?", type: "mcq", questionCategory: "제목", choices: ["My Sad Day", "Mom's Cooking Class", "My Happy Birthday Party", "A Trip to the Zoo", "My Favorite Teddy Bear"], answer: 3, answerText: "", shuffledWords: [] },
+                            { q: "주어진 단어를 바르게 나열하여 주인공이 정원에서 한 행동을 완성하세요.", type: "unscramble", questionCategory: "배열", choices: [], answer: null, answerText: "We played with a red ball", shuffledWords: ["a", "played", "ball", "We", "red", "with"] },
+                            { q: "주인공이 생일 선물로 받은 2가지 물건을 본문에서 찾아 쓰세요.", type: "descriptive", questionCategory: "서술", choices: [], answer: null, answerText: "파란색 필통(blue pencil case)과 귀여운 곰 인형(cute teddy bear)", shuffledWords: [] }
+                        ]
+                    },
+                    {
+                        passage: "Every morning, I drink a cup of fresh warm milk. 🥛 Then, I put on my yellow school hat. I walk to school with my best friend, Leo. We see a yellow school bus on the road. Our teacher stands at the school gate and smiles happily at us.",
+                        questions: [
+                            { q: "글쓴이가 매일 아침 학교에 갈 때 쓰는 물건은 무엇인가요?", type: "descriptive", questionCategory: "서술", choices: [], answer: null, answerText: "노란색 학교 모자 (yellow school hat)", shuffledWords: [] },
+                            { q: "본문 내용과 일치하는 것은 무엇인가요?", type: "mcq", questionCategory: "내용일치", choices: ["매일 아침 차가운 주스를 마신다.", "혼자서 학교까지 걸어간다.", "길에서 빨간 소방차를 보았다.", "선생님은 교실 안에서 공부를 가르치고 계신다.", "선생님은 학교 교문 앞에 서서 웃으며 맞이해주신다."], answer: 5, answerText: "", shuffledWords: [] },
+                            { q: "밑줄 친 'Leo'는 누구인지 본문 단어를 사용하여 서술하세요.", type: "descriptive", questionCategory: "서술", choices: [], answer: null, answerText: "글쓴이의 가장 친한 친구 (best friend)", shuffledWords: [] }
+                        ]
+                    },
+                    {
+                        passage: "My family went to the zoo last Saturday. We saw many cool animals! 🦁 There was a big lion sleeping under the shade. A playful rabbit was eating green grass. My favorite animal was the tall giraffe. It has a very long neck to eat leaves from the top of the tree.",
+                        questions: [
+                            { q: "동물원에서 사자가 하고 있었던 행동으로 알맞은 것은?", type: "mcq", questionCategory: "내용일치", choices: ["초록색 풀을 뜯어먹고 있었다.", "나무 밑 그늘에서 잠을 자고 있었다.", "친구들과 축구를 하고 있었다.", "긴 목으로 나무 위 나뭇잎을 먹고 있었다.", "사육사에게 인사를 하고 있었다."], answer: 2, answerText: "", shuffledWords: [] },
+                            { q: "글쓴이가 동물원에서 가장 좋아한 동물은 무엇이며, 그 이유는 무엇인가요?", type: "descriptive", questionCategory: "서술", choices: [], answer: null, answerText: "기린(giraffe)이며, 목이 아주 길어 나무 최고대의 잎을 먹을 수 있기 때문이다.",
+                            shuffledWords: [] },
+                            { q: "다음 단어를 알맞게 조합하여 기린의 특성에 관한 문장을 완성하세요.", type: "unscramble", questionCategory: "배열", choices: [], answer: null, answerText: "It has a very long neck", shuffledWords: ["very", "neck", "has", "long", "a", "It"] }
+                        ]
+                    },
+                    {
+                        passage: "It is raining outside today. ☔ I need my blue umbrella. The sky is grey and full of heavy clouds. I walk slowly to the library near my house. It is quiet inside. I sit on a comfy chair and read an exciting book about stars.",
+                        questions: [
+                            { q: "위 글을 통해 추론할 수 있는 현재 바깥의 날씨 상황으로 가장 알맞은 것은?", type: "mcq", questionCategory: "추론", choices: ["햇살이 눈부시고 아주 덥다.", "바람이 불고 눈이 내린다.", "비가 내리고 하늘이 흐리다.", "화창하고 구름 한 점 없다.", "안개가 끼고 번개가 친다."], answer: 3, answerText: "", shuffledWords: [] },
+                            { q: "글쓴이가 도서관에서 읽고 있는 책의 주제는 무엇인가요?", type: "descriptive", questionCategory: "서술", choices: [], answer: null, answerText: "별에 관한 재미있는 책 (an exciting book about stars)", shuffledWords: [] },
+                            { q: "다음 어휘들을 바르게 배열하여 도서관에 가는 장면의 영어 문장을 완성하세요.", type: "unscramble", questionCategory: "배열", choices: [], answer: null, answerText: "I walk slowly to the library", shuffledWords: ["library", "walk", "I", "slowly", "the", "to"] }
+                        ]
+                    }
+                ],
+                translation: [
+                    { eng: "I love my happy and sweet family very much.", kor: "나는 나의 행복하고 화목한 가족을 아주 많이 사랑한다." },
+                    { eng: "The bright sun is shining in the blue sky today.", kor: "오늘 파란 하늘에 밝은 태양이 반짝반짝 빛나고 있다." },
+                    { eng: "A cute little dog is running in the garden.", kor: "귀여운 아기 강아지 한 마리가 정원에서 뛰놀고 있다." },
+                    { eng: "We eat fresh apples and yellow bananas every afternoon.", kor: "우리는 매일 오후에 싱싱한 사과와 노란 바나나를 먹는다." },
+                    { eng: "The green tree has many pretty red flowers.", kor: "그 초록색 나무에는 예쁜 빨간 꽃들이 많이 피어 있다." },
+                    { eng: "I write my name with a black pencil.", kor: "나는 내 이름을 검은색 연필로 정성스럽게 적는다." },
+                    { eng: "The school library is full of interesting story books.", kor: "학교 도서관은 흥미로운 이야기책들로 가득 차 있다." },
+                    { eng: "My father drives a cool blue car on weekends.", kor: "우리 아빠는 주말마다 멋진 파란색 자동차를 운전하신다." },
+                    { eng: "She drinks sweet milk and eats a warm cookie.", kor: "그녀는 달콤한 우유를 마시고 따뜻한 쿠키를 먹는다." },
+                    { eng: "They play with a small soccer ball at school.", kor: "그들은 학교에서 작은 축구공을 가지고 재미있게 논다." }
+                ],
+                unscramble: [
+                    { eng: "I have a red ball in my bag.", kor: "나는 가방 안에 빨간 공을 하나 가지고 있다." },
+                    { eng: "The sky is very blue and beautiful today.", kor: "오늘 하늘은 매우 파랗고 눈부시게 아름답다." },
+                    { eng: "She likes cute yellow birds on the tree.", kor: "그녀는 나무 위에 앉아 있는 귀여운 노란 새들을 좋아한다." },
+                    { eng: "He rides his blue bicycle to school.", kor: "그는 그의 파란색 자전거를 타고 학교에 간다." },
+                    { eng: "My dog waits for me at the door.", kor: "우리 강아지는 문 앞에서 나를 꼬리 치며 기다린다." }
+                ]
+            },
+            elementary: {
+                vocab: [
+                    { word: "happy", mean: "행복한" },
+                    { word: "doctor", mean: "의사" },
+                    { word: "school", mean: "학교" },
+                    { word: "beautiful", mean: "아름다운" },
+                    { word: "winter", mean: "겨울" },
+                    { word: "banana", mean: "바나나" },
+                    { word: "garden", mean: "정원" },
+                    { word: "summer", mean: "여름" },
+                    { word: "friend", mean: "친구" },
+                    { word: "family", mean: "가족" }
+                ],
+                reading: [
+                    {
+                        passage: "My dog, Max, is my best friend. He has brown fur and a very long tail. Every afternoon when I come back from school, Max waits for me at the front door. He wags his tail happily and jumps up to greet me. We often go to the park near my house to play catch with a small red ball.",
+                        questions: [
+                            { q: "위 글의 요지로 가장 적절한 것은?", type: "mcq", questionCategory: "요지", choices: ["반려견을 산책시키는 다양한 방법들", "글쓴이와 반려견 Max의 깊은 유대감과 일상", "강아지가 꼬리를 흔드는 행동 심리학", "초등학생을 위한 방과 후 체육 활동의 중요성", "공원에서 일어나는 반려견 안전 사고 예방법"], answer: 2, answerText: "", shuffledWords: [] },
+                            { q: "밑줄 친 대명사 'He'가 지칭하는 대상은 무엇인가요?", type: "mcq", questionCategory: "대명사지칭", choices: ["The writer (글쓴이)", "Leo (친구)", "Max (반려견)", "The teacher (선생님)", "The father (아버지)"], answer: 3, answerText: "", shuffledWords: [] },
+                            { q: "글쓴이와 강아지가 공원에서 함께 즐기는 놀이는 무엇이며 어떤 도구를 사용하는지 서술하세요.", type: "descriptive", questionCategory: "서술", choices: [], answer: null, answerText: "공놀이(play catch)를 하며, 빨갛고 작은 공(small red ball)을 사용한다.", shuffledWords: [] }
+                        ]
+                    }
+                ],
+                translation: [],
+                unscramble: []
+            },
+            middle: {
+                vocab: [
+                    { word: "analyze", mean: "분석하다" },
+                    { word: "significant", mean: "중요한" },
+                    { word: "alternative", mean: "대안" },
+                    { word: "consequence", mean: "결과" },
+                    { word: "evaluate", mean: "평가하다" },
+                    { word: "innovation", mean: "혁신" },
+                    { word: "hypothesis", mean: "가설" },
+                    { word: "maintain", mean: "유지하다" },
+                    { word: "objective", mean: "목표" },
+                    { word: "perspective", mean: "관점" }
+                ],
+                reading: [
+                    {
+                        passage: "Artificial Intelligence (AI) is transforming many aspects of our lives, from healthcare to entertainment. While AI algorithms can analyze vast amounts of data much faster than humans, they also raise ethical questions regarding algorithmic bias and job displacement. To harness the benefits of AI while minimizing its negative impacts, it is essential for policymakers, developers, and educators to collaborate in designing frameworks that prioritize human well-being and social equity.",
+                        questions: [
+                            { q: "What is the primary objective of the passage?", type: "mcq", questionCategory: "요지", choices: ["To emphasize the technical superiority of machine learning over human capabilities", "To argue for cooperative frameworks to address ethical concerns of AI", "To demonstrate how AI algorithms minimize biases in financial sectors", "To highlight the historical development of computer sciences", "To encourage developers to make more rapid updates in cloud software"], answer: 2, answerText: "", shuffledWords: [] },
+                            { q: "According to the text, why is the collaboration of policymakers and developers critical?", type: "descriptive", questionCategory: "서술", choices: [], answer: null, answerText: "인공지능의 혜택을 극대화하면서도 알고리즘의 편향이나 일자리 대체와 같은 윤리적 문제와 부정적 영향을 최소화하기 위함이다.", shuffledWords: [] },
+                            { q: "다음 제시된 단어들을 정교하게 배열하여 윤리적인 문제 발생에 대한 문장을 작성하시오.", type: "unscramble", questionCategory: "배열", choices: [], answer: null, answerText: "they also raise ethical questions regarding algorithmic bias", shuffledWords: ["also", "algorithmic", "questions", "raise", "they", "bias", "ethical", "regarding"] }
+                        ]
+                    }
+                ],
+                translation: [],
+                unscramble: []
+            }
+        };
+
+        // WINDOW ONLOAD CORE ENGINE STARTUP
+        window.onload = function() {
+            // Safe assignment from LocalStorage inside onload
+            currentLevel = localStorage.getItem('monthly_exam_level') || 'elementary_junior';
+            vocabCount = parseInt(localStorage.getItem('monthly_exam_vocab_count')) || 20;
+            vocabType = localStorage.getItem('monthly_exam_vocab_type') || 'matching';
+            readingCount = parseInt(localStorage.getItem('monthly_exam_reading_count')) || 5;
+            translationCount = parseInt(localStorage.getItem('monthly_exam_translation_count')) || 10;
+            unscrambleCount = parseInt(localStorage.getItem('monthly_exam_unscramble_count')) || 10;
+            
+            isPaperTeacherMode = false; // Default state
+
+            // Load saved custom data or fall back to default deep cloned object
+            const savedData = localStorage.getItem('monthly_exam_v3_data');
+            if (savedData) {
+                try {
+                    examData = JSON.parse(savedData);
+                } catch (e) {
+                    examData = JSON.parse(JSON.stringify(defaultExamData[currentLevel]));
+                }
+            } else {
+                examData = JSON.parse(JSON.stringify(defaultExamData[currentLevel]));
+            }
+
+            // Sync with elements
+            syncCountControls();
+            updateSidebarLevelButtons();
+            initializeEditorInputs();
+            syncHeaderData();
+            renderPaperPreview();
+        };
+
+        // Helper to format scores cleanly
+        function formatScore(score) {
+            return Number(score).toFixed(score % 1 === 0 ? 0 : 1);
+        }
+
+        // Sync inputs and sliders values
+        function syncCountControls() {
+            document.getElementById('config-level').value = currentLevel;
+            
+            document.getElementById('config-vocab-count').value = vocabCount;
+            document.getElementById('sidebar-range-vocab').value = vocabCount;
+            document.getElementById('sidebar-val-vocab').innerText = vocabCount + '개';
+
+            document.getElementById('config-vocab-type').value = vocabType;
+            document.getElementById('sidebar-vocab-type').value = vocabType;
+
+            document.getElementById('config-reading-count').value = readingCount;
+            document.getElementById('sidebar-range-reading').value = readingCount;
+            document.getElementById('sidebar-val-reading').innerText = readingCount + '개';
+
+            document.getElementById('config-translation-count').value = translationCount;
+            document.getElementById('sidebar-range-translation').value = translationCount;
+            document.getElementById('sidebar-val-translation').innerText = translationCount + '개';
+
+            document.getElementById('config-unscramble-count').value = unscrambleCount;
+            document.getElementById('sidebar-range-unscramble').value = unscrambleCount;
+            document.getElementById('sidebar-val-unscramble').innerText = unscrambleCount + '개';
+        }
+
+        // Change School Target Level
+        function changeLevel(level) {
+            currentLevel = level;
+            localStorage.setItem('monthly_exam_level', level);
+            
+            let koreanLevelName = "";
+            if (level === 'elementary_junior') {
+                koreanLevelName = "초등 저학년(2~4학년)";
+            } else if (level === 'elementary') {
+                koreanLevelName = "초등 고학년(5~6학년)";
+            } else {
+                koreanLevelName = "중등부";
+            }
+            
+            document.getElementById('config-title').value = `6월 ${koreanLevelName} 영어 학업성취도 평가`;
+            document.getElementById('config-level').value = level;
+            
+            updateSidebarLevelButtons();
+
+            examData = JSON.parse(JSON.stringify(defaultExamData[level]));
+            localStorage.removeItem('monthly_exam_v3_data'); // Clear custom override cache to switch cleanly
+
+            initializeEditorInputs();
+            syncHeaderData();
+            renderPaperPreview();
+            showToast(`${koreanLevelName} 샘플 데이터가 반영되었습니다.`);
+        }
+
+        // Toggle Styling for Sidebar level selection buttons
+        function updateSidebarLevelButtons() {
+            const btnElemJr = document.getElementById('sidebar-btn-elem-jr');
+            const btnElem = document.getElementById('sidebar-btn-elem');
+            const btnMid = document.getElementById('sidebar-btn-mid');
+            
+            btnElemJr.className = "py-1 px-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded font-semibold text-[10px] transition truncate";
+            btnElem.className = "py-1 px-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded font-semibold text-[10px] transition truncate";
+            btnMid.className = "py-1 px-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded font-semibold text-[10px] transition truncate";
+            
+            if (currentLevel === 'elementary_junior') {
+                btnElemJr.className = "py-1 px-1 bg-indigo-600 text-white font-bold rounded shadow text-[10px] transition truncate";
+            } else if (currentLevel === 'elementary') {
+                btnElem.className = "py-1 px-1 bg-indigo-600 text-white font-bold rounded shadow text-[10px] transition truncate";
+            } else {
+                btnMid.className = "py-1 px-1 bg-indigo-600 text-white font-bold rounded shadow text-[10px] transition truncate";
+            }
+        }
+
+        // Adjust vocab counts dynamically
+        function changeVocabCount(val) {
+            let num = parseInt(val);
+            if (isNaN(num) || num < 5) num = 5;
+            if (num > 30) num = 30;
+
+            vocabCount = num;
+            localStorage.setItem('monthly_exam_vocab_count', num);
+            syncCountControls();
+            syncHeaderData();
+            renderPaperPreview();
+        }
+
+        // Adjust vocab test type dynamically
+        function changeVocabType(val) {
+            vocabType = val;
+            localStorage.setItem('monthly_exam_vocab_type', val);
+            syncCountControls();
+            renderPaperPreview();
+            showToast("단어 출제 방식이 변경되었습니다.");
+        }
+
+        // Adjust reading passage counts dynamically
+        function changeReadingCount(val) {
+            let num = parseInt(val);
+            if (isNaN(num) || num < 1) num = 1;
+            if (num > 5) num = 5;
+
+            readingCount = num;
+            localStorage.setItem('monthly_exam_reading_count', num);
+            syncCountControls();
+            syncHeaderData();
+            initializeEditorInputs(); // Redraw reading passage editor blocks based on count
+            renderPaperPreview();
+        }
+
+        // Adjust translation counts dynamically
+        function changeTranslationCount(val) {
+            let num = parseInt(val);
+            if (isNaN(num) || num < 5) num = 5;
+            if (num > 15) num = 15;
+
+            translationCount = num;
+            localStorage.setItem('monthly_exam_translation_count', num);
+            syncCountControls();
+            syncHeaderData();
+            renderPaperPreview();
+        }
+
+        // Adjust unscramble counts dynamically
+        function changeUnscrambleCount(val) {
+            let num = parseInt(val);
+            if (isNaN(num) || num < 5) num = 5;
+            if (num > 15) num = 15;
+
+            unscrambleCount = num;
+            localStorage.setItem('monthly_exam_unscramble_count', num);
+            syncCountControls();
+            syncHeaderData();
+            renderPaperPreview();
+        }
+
+        // Toggle Teacher Dashboard Drawer
+        function toggleTeacherDrawer() {
+            const drawer = document.getElementById('teacher-drawer');
+            drawer.classList.toggle('hidden');
+            showToast(drawer.classList.contains('hidden') ? "선생님 편집 도구 닫힘" : "선생님 편집 도구 열림");
+        }
+
+        // Save API Key securely in localStorage
+        function saveApiKey(val) {
+            apiKey = val.trim();
+            localStorage.setItem('monthly_exam_api_key', apiKey);
+            showToast("Gemini API Key가 안전하게 브라우저에 임시 보관되었습니다.");
+        }
+
+        // Sync metadata fields and calculate dynamic scale weights
+        function syncHeaderData() {
+            const academy = document.getElementById('config-academy').value;
+            const title = document.getElementById('config-title').value;
+            const subject = document.getElementById('config-subject').value;
+            const date = document.getElementById('config-date').value;
+
+            document.getElementById('paper-academy-display').innerText = academy;
+            document.getElementById('paper-title-display').innerText = title;
+            document.getElementById('paper-subject-display').innerText = subject;
+            document.getElementById('paper-date-display').innerText = date;
+
+            const readingQuestionsCount = readingCount * 3;
+            const totalQuestionsCount = vocabCount + readingQuestionsCount + translationCount + unscrambleCount;
+
+            const scorePerVocab = formatScore(100 / vocabCount);
+            const scorePerReading = formatScore(100 / readingQuestionsCount);
+            const scorePerTranslation = formatScore(100 / translationCount);
+            const scorePerUnscramble = formatScore(100 / unscrambleCount);
+
+            // Dynamically update upper status message
+            const summaryText = `단어 ${vocabCount} | 독해 ${readingQuestionsCount} (${readingCount}지문) | 영한해석 ${translationCount} | 어순배열 ${unscrambleCount} (총 ${totalQuestionsCount}문항)`;
+            document.getElementById('header-summary').innerText = summaryText;
+
+            // Section labels dynamic scoring print
+            document.getElementById('paper-vocab-title-display').innerText = `[I] Vocabulary Evaluation (1 - ${vocabCount})`;
+            document.getElementById('paper-vocab-score-display').innerText = `각 ${scorePerVocab}점 [총 100점]`;
+            
+            document.getElementById('paper-reading-title-display').innerText = `[II] Reading Comprehension (${vocabCount + 1} - ${vocabCount + readingQuestionsCount})`;
+            document.getElementById('paper-reading-score-display').innerText = `각 ${scorePerReading}점 [총 100점]`;
+            
+            document.getElementById('paper-translation-title-display').innerText = `[III] Sentence Translation (${vocabCount + readingQuestionsCount + 1} - ${vocabCount + readingQuestionsCount + translationCount})`;
+            document.getElementById('paper-translation-score-display').innerText = `각 ${scorePerTranslation}점 [총 100점]`;
+            
+            document.getElementById('paper-unscramble-title-display').innerText = `[IV] Sentence Unscrambling Practice (${vocabCount + readingQuestionsCount + translationCount + 1} - ${vocabCount + readingQuestionsCount + translationCount + unscrambleCount})`;
+            document.getElementById('paper-unscramble-score-display').innerText = `각 ${scorePerUnscramble}점 [총 100점]`;
+
+            // Adjust Editor Tabs text
+            document.getElementById('tab-vocab').innerText = `단어 (${vocabCount})`;
+            document.getElementById('tab-reading').innerText = `독해 (${readingCount}지문)`;
+            document.getElementById('tab-translation').innerText = `영한해석 (${translationCount})`;
+            document.getElementById('tab-unscramble').innerText = `어순배열 (${unscrambleCount})`;
+        }
+
+        // Initialize editor textarea boxes with core data models
+        function initializeEditorInputs() {
+            if (!examData) return;
+
+            // Section 1 (Vocab)
+            const displayVocab = examData.vocab;
+            const engText = displayVocab.map(x => x.word).join('\n');
+            const korText = displayVocab.map(x => x.mean).join('\n');
+            
+            const engInput = document.getElementById('edit-vocab-eng');
+            const korInput = document.getElementById('edit-vocab-kor');
+            if (engInput) engInput.value = engText;
+            if (korInput) korInput.value = korText;
+
+            // Secure API Key input display
+            const apiKeyInput = document.getElementById('config-api-key');
+            if (apiKeyInput) apiKeyInput.value = apiKey;
+
+            // Section 2 Panel Dynamic Structure (Reading) - matches current readingCount
+            const readingEditorList = document.getElementById('reading-editor-list');
+            readingEditorList.innerHTML = '';
+            
+            for(let pIdx = 0; pIdx < readingCount; pIdx++) {
+                const pass = examData.reading[pIdx] || {
+                    passage: "Please enter your reading passage text here.",
+                    questions: [
+                        { q: "Sample Question 1?", type: "mcq", questionCategory: "제목", choices: ["A", "B", "C", "D", "E"], answer: 1, answerText: "", shuffledWords: [] },
+                        { q: "Sample Question 2?", type: "mcq", questionCategory: "내용일치", choices: ["A", "B", "C", "D", "E"], answer: 1, answerText: "", shuffledWords: [] },
+                        { q: "Sample Question 3?", type: "mcq", questionCategory: "서술", choices: [], answer: null, answerText: "Sample Answer Text", shuffledWords: [] }
+                    ]
+                };
+
+                const pBox = document.createElement('div');
+                pBox.className = "bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3 text-xs";
+                
+                let questionsFormHTML = '';
+                pass.questions.forEach((q, qIdx) => {
+                    const isMCQ = q.type === 'mcq' || (!q.type && q.choices && q.choices.length > 0);
+                    const isUnscramble = q.type === 'unscramble';
+                    const isDescriptive = q.type === 'descriptive';
+                    
+                    questionsFormHTML += `
+                        <div class="space-y-2 p-3 bg-slate-900/50 rounded-lg border border-slate-850">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <span class="font-bold text-indigo-400">질문 ${qIdx+1} (${pIdx*3 + vocabCount + 1 + qIdx}번)</span>
+                                
+                                <div class="flex items-center gap-1.5 text-[10px]">
+                                    <span class="text-slate-500 font-semibold">유형:</span>
+                                    <select id="edit-qtype-${pIdx}-${qIdx}" onchange="changeQuestionType(${pIdx}, ${qIdx}, this.value)" class="bg-slate-800 border border-slate-700 rounded px-1 py-0.5 text-white">
+                                        <option value="mcq" ${isMCQ ? 'selected' : ''}>객관식</option>
+                                        <option value="descriptive" ${isDescriptive ? 'selected' : ''}>서술형</option>
+                                        <option value="unscramble" ${isUnscramble ? 'selected' : ''}>어순배열형</option>
+                                    </select>
+                                    
+                                    <span class="text-slate-500 font-semibold ml-1">평가유형:</span>
+                                    <select id="edit-qcat-${pIdx}-${qIdx}" onchange="changeQuestionCategory(${pIdx}, ${qIdx}, this.value)" class="bg-slate-800 border border-slate-700 rounded px-1 py-0.5 text-white">
+                                        <option value="제목" ${q.questionCategory === '제목' ? 'selected' : ''}>제목</option>
+                                        <option value="요지" ${q.questionCategory === '요지' ? 'selected' : ''}>요지</option>
+                                        <option value="내용일치" ${q.questionCategory === '내용일치' ? 'selected' : ''}>내용일치</option>
+                                        <option value="내용불일치" ${q.questionCategory === '내용불일치' ? 'selected' : ''}>내용불일치</option>
+                                        <option value="추론" ${q.questionCategory === '추론' ? 'selected' : ''}>추론</option>
+                                        <option value="대명사지칭" ${q.questionCategory === '대명사지칭' ? 'selected' : ''}>대명사지칭</option>
+                                        <option value="서술" ${q.questionCategory === '서술' ? 'selected' : ''}>서술형</option>
+                                        <option value="배열" ${q.questionCategory === '배열' ? 'selected' : ''}>어순배열</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <input type="text" id="edit-qtext-${pIdx}-${qIdx}" value="${q.q || ''}" class="w-full bg-slate-900 border border-slate-800 rounded px-2.5 py-1.5 text-slate-100 font-medium" placeholder="질문 내용을 기입하세요.">
+                            
+                            <!-- MCQ Options (Only Visible if MCQ) -->
+                            <div id="edit-mcq-box-${pIdx}-${qIdx}" class="${isMCQ ? '' : 'hidden'} space-y-1.5 pl-3 border-l-2 border-indigo-950">
+                                <div class="grid grid-cols-1 md:grid-cols-5 gap-1.5 text-[10px]">
+                                    ${[0, 1, 2, 3, 4].map(cIdx => `
+                                        <div>
+                                            <span class="text-slate-500">선택지 ${cIdx+1}</span>
+                                            <input type="text" id="edit-qchoice-${pIdx}-${qIdx}-${cIdx}" value="${q.choices && q.choices[cIdx] ? q.choices[cIdx] : ''}" class="w-full bg-slate-900 border border-slate-800 rounded px-1.5 py-1 text-slate-200">
+                                        </div>
+                                    `).join('')}
+                                </div>
+                                <div class="flex items-center gap-2 text-[11px] pt-1">
+                                    <span class="text-slate-400 font-semibold">정답 번호 (1-5):</span>
+                                    <input type="number" id="edit-qans-${pIdx}-${qIdx}" min="1" max="5" value="${q.answer || 1}" class="w-12 bg-slate-900 border border-slate-800 rounded px-1.5 py-0.5 text-center font-bold text-rose-500">
+                                </div>
+                            </div>
+
+                            <!-- Descriptive / Unscramble Answers -->
+                            <div id="edit-text-box-${pIdx}-${qIdx}" class="${!isMCQ ? '' : 'hidden'} space-y-1.5 pl-3 border-l-2 border-amber-950">
+                                <div>
+                                    <span class="text-slate-500 block text-[10px] mb-0.5">교사용 모범 정답 텍스트</span>
+                                    <input type="text" id="edit-qans-text-${pIdx}-${qIdx}" value="${q.answerText || ''}" class="w-full bg-slate-900 border border-slate-800 rounded px-2 py-1 text-rose-400 font-bold" placeholder="학생용 시험지에는 가려지며, 교사용 정답지에 빨간색으로 출력됩니다.">
+                                </div>
+                                <div class="${isUnscramble ? '' : 'hidden'}" id="edit-unscramble-chips-box-${pIdx}-${qIdx}">
+                                    <span class="text-slate-500 block text-[10px] mb-0.5">흐트러뜨릴 단어들 (쉼표로 구분하여 입력 시 이 카드가 섞여서 출제됩니다)</span>
+                                    <input type="text" id="edit-qunscramble-chips-${pIdx}-${qIdx}" value="${q.shuffledWords ? q.shuffledWords.join(', ') : ''}" class="w-full bg-slate-900 border border-slate-800 rounded px-2 py-1 text-emerald-400 font-mono" placeholder="apple, banana, star, desk">
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                pBox.innerHTML = `
+                    <div class="flex flex-col md:flex-row md:items-center justify-between text-amber-400 font-bold border-b border-slate-800 pb-1.5 gap-2">
+                        <span>[지문 ${pIdx+1}] 독해 본문 및 문제 편집</span>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="generateAIQuestionsForPassage(${pIdx})" class="bg-indigo-650 hover:bg-indigo-600 text-white text-[10px] font-bold px-2.5 py-1 rounded transition flex items-center gap-1.5 shadow-sm">
+                                <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i> 이 지문으로 AI 문제 출제 (3문항)
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1">지문 본문 (영어)</label>
+                        <textarea id="edit-passage-${pIdx}" oninput="syncSinglePassageText(${pIdx}, this.value)" rows="4" class="w-full bg-slate-900 border border-slate-800 rounded p-2 text-slate-200 font-serif font-light leading-relaxed focus:outline-none">${pass.passage}</textarea>
+                    </div>
+                    <div class="space-y-3 pt-1">
+                        ${questionsFormHTML}
+                    </div>
+                `;
+                readingEditorList.appendChild(pBox);
+            }
+
+            // Section 3 (Translation)
+            const displayTrans = examData.translation.slice(0, translationCount);
+            const transText = displayTrans.map(x => `${x.eng}=${x.kor}`).join('\n');
+            document.getElementById('edit-translation').value = transText;
+
+            // Section 4 (Unscramble)
+            const displayUnscramble = examData.unscramble.slice(0, unscrambleCount);
+            const unscrambleText = displayUnscramble.map(x => `${x.eng}=${x.kor}`).join('\n');
+            document.getElementById('edit-unscramble').value = unscrambleText;
+        }
+
+        // Real-time 동기화를 지원하는 신규 서브루틴 추가 (지문을 바꿀 때 AI가 즉시 변경된 지문을 활용하도록 로직 정합성 수립)
+        function syncSinglePassageText(pIdx, val) {
+            if (examData && examData.reading && examData.reading[pIdx]) {
+                examData.reading[pIdx].passage = val.trim();
+                renderPaperPreview(); // 미리보기에도 실시간 반영
+            }
+        }
+
+        // Handle Type selection switch in Editor dynamically
+        function changeQuestionType(pIdx, qIdx, type) {
+            const mcqBox = document.getElementById(`edit-mcq-box-${pIdx}-${qIdx}`);
+            const textBox = document.getElementById(`edit-text-box-${pIdx}-${qIdx}`);
+            const chipsBox = document.getElementById(`edit-unscramble-chips-box-${pIdx}-${qIdx}`);
+            
+            if (type === 'mcq') {
+                mcqBox.classList.remove('hidden');
+                textBox.classList.add('hidden');
+                chipsBox.classList.add('hidden');
+            } else if (type === 'unscramble') {
+                mcqBox.classList.add('hidden');
+                textBox.classList.remove('hidden');
+                chipsBox.classList.remove('hidden');
+            } else {
+                mcqBox.classList.add('hidden');
+                textBox.classList.remove('hidden');
+                chipsBox.classList.add('hidden');
+            }
+            
+            // Sync current configuration status to examData
+            if (examData.reading[pIdx] && examData.reading[pIdx].questions[qIdx]) {
+                examData.reading[pIdx].questions[qIdx].type = type;
+            }
+        }
+
+        function changeQuestionCategory(pIdx, qIdx, category) {
+            if (examData.reading[pIdx] && examData.reading[pIdx].questions[qIdx]) {
+                examData.reading[pIdx].questions[qIdx].questionCategory = category;
+            }
+        }
+
+        // Bulk Editor Switch Tab logic
+        function switchEditorTab(tab) {
+            const tabs = ['vocab', 'reading', 'translation', 'unscramble'];
+            tabs.forEach(t => {
+                document.getElementById(`tab-${t}`).className = "px-3 py-1.5 text-xs font-semibold text-slate-400 hover:text-white rounded-t-md";
+                document.getElementById(`panel-${t}`).classList.add('hidden');
+            });
+
+            document.getElementById(`tab-${tab}`).className = "px-3 py-1.5 text-xs font-semibold text-white border-b-2 border-indigo-500 bg-slate-800 rounded-t-md";
+            document.getElementById(`panel-${tab}`).classList.remove('hidden');
+        }
+
+        // Smart Excel Paste Detection Handler
+        function handleVocabEngPaste(e) {
+            const clipboardData = e.clipboardData || window.clipboardData;
+            if (!clipboardData) return;
+            const pastedText = clipboardData.getData('Text');
+            
+            if (pastedText.includes('\t')) {
+                e.preventDefault();
+                const lines = pastedText.split(/\r?\n/);
+                const engs = [];
+                const kors = [];
+                
+                lines.forEach(line => {
+                    if (line.trim() === '') return;
+                    const parts = line.split('\t');
+                    if (parts.length >= 2) {
+                        engs.push(parts[0].trim());
+                        kors.push(parts[1].trim());
+                    } else if (parts.length === 1) {
+                        engs.push(parts[0].trim());
+                        kors.push("");
+                    }
+                });
+                
+                if (engs.length > 0 || kors.length > 0) {
+                    document.getElementById('edit-vocab-eng').value = engs.join('\n');
+                    document.getElementById('edit-vocab-kor').value = kors.join('\n');
+                    showToast("⚡ 엑셀 표 구조를 감지하여 영어와 뜻을 각각 자동 입력했습니다!");
+                }
+            }
+        }
+
+        // Apply Vocab input modifications
+        function applyVocabChange() {
+            const engLines = document.getElementById('edit-vocab-eng').value.split('\n');
+            const korLines = document.getElementById('edit-vocab-kor').value.split('\n');
+            
+            const maxLen = Math.max(engLines.length, korLines.length);
+            const arr = [];
+            for (let i = 0; i < maxLen; i++) {
+                const eng = engLines[i] !== undefined ? engLines[i].trim() : "";
+                const kor = korLines[i] !== undefined ? korLines[i].trim() : "";
+                if (eng || kor) {
+                    arr.push({ word: eng, mean: kor });
+                }
+            }
+            examData.vocab = arr;
+            syncDataUpdates();
+        }
+
+        function applyReadingChange() {
+            const updatedReading = [];
+            for (let p = 0; p < readingCount; p++) {
+                const passageEl = document.getElementById(`edit-passage-${p}`);
+                if (!passageEl) continue;
+                const passageText = passageEl.value.trim();
+                const questions = [];
+                for (let q = 0; q < 3; q++) {
+                    const qType = document.getElementById(`edit-qtype-${p}-${q}`).value;
+                    const qCat = document.getElementById(`edit-qcat-${p}-${q}`).value;
+                    const qText = document.getElementById(`edit-qtext-${p}-${q}`).value.trim();
+                    const choices = [];
+                    for (let c = 0; c < 5; c++) {
+                        const choiceEl = document.getElementById(`edit-qchoice-${p}-${q}-${c}`);
+                        choices.push(choiceEl ? choiceEl.value.trim() : "");
+                    }
+                    const answer = parseInt(document.getElementById(`edit-qans-${p}-${q}`).value) || 1;
+                    const answerText = document.getElementById(`edit-qans-text-${p}-${q}`).value.trim();
+                    
+                    const rawChips = document.getElementById(`edit-qunscramble-chips-${p}-${q}`).value.trim();
+                    const shuffledWords = rawChips ? rawChips.split(',').map(x => x.trim()) : [];
+
+                    questions.push({ 
+                        q: qText, 
+                        type: qType, 
+                        questionCategory: qCat, 
+                        choices, 
+                        answer, 
+                        answerText, 
+                        shuffledWords 
+                    });
+                }
+                updatedReading.push({ passage: passageText, questions });
+            }
+            examData.reading = updatedReading;
+            syncDataUpdates();
+        }
+
+        function applyTranslationChange() {
+            const lines = document.getElementById('edit-translation').value.trim().split('\n');
+            const arr = [];
+            lines.forEach(line => {
+                const parts = line.split('=');
+                if(parts.length >= 2) {
+                    arr.push({ eng: parts[0].trim(), kor: parts[1].trim() });
+                }
+            });
+            examData.translation = arr;
+            syncDataUpdates();
+        }
+
+        function applyUnscrambleChange() {
+            const lines = document.getElementById('edit-unscramble').value.trim().split('\n');
+            const arr = [];
+            lines.forEach(line => {
+                const parts = line.split('=');
+                if(parts.length >= 2) {
+                    arr.push({ eng: parts[0].trim(), kor: parts[1].trim() });
+                }
+            });
+            examData.unscramble = arr;
+            syncDataUpdates();
+        }
+
+        function syncDataUpdates() {
+            renderPaperPreview();
+            showToast("시험지 템플릿 실시간 렌더링 완료!");
+        }
+
+        function saveToLocalStorage() {
+            localStorage.setItem('monthly_exam_v3_data', JSON.stringify(examData));
+            showToast("변경 사항이 브라우저 LocalStorage에 안전하게 보관되었습니다.");
+        }
+
+        function resetToDemo() {
+            openModal("데이터 기본복원", "직접 수정한 모든 문제 정보가 데모 세트로 초기화됩니다. 계속하시겠습니까?", () => {
+                examData = JSON.parse(JSON.stringify(defaultExamData[currentLevel]));
+                localStorage.removeItem('monthly_exam_v3_data');
+                initializeEditorInputs();
+                syncDataUpdates();
+                showToast("기본 데이터로 복구되었습니다.");
+            });
+        }
+
+        // 수동 편집, 브라우저 캐시 및 AI 응답 데이터를 정밀 정제하는 검수 가드
+        function sanitizeReadingQuestions(questions) {
+            if (!Array.isArray(questions)) return [];
+            return questions.map(q => {
+                let choices = [];
+                if (Array.isArray(q.choices)) {
+                    choices = q.choices;
+                } else if (typeof q.choices === 'string') {
+                    // 기호(<, >, |)가 혼입된 오염 보기를 안전 분할
+                    let cleanStr = q.choices.replace(/^[<\[\s\-|]+|[>\]\s\-|]+$/g, '');
+                    choices = cleanStr.split(/[|]/).map(s => s.trim());
+                }
+                
+                // 보기 누락 자동 방어 및 정확히 5개 채우기
+                while (choices.length < 5) {
+                    choices.push("________________");
+                }
+                choices = choices.slice(0, 5);
+
+                // 원형 괄호 기호 및 <, > 노출 제거 클리닝 작업
+                choices = choices.map(choice => {
+                    if (typeof choice === 'string') {
+                        return choice.replace(/^[<\[\s]+|[>\]\s]+$/g, '').trim();
+                    }
+                    return String(choice);
+                });
+
+                // 어순 배열의 경우 셔플 단어 카드 자동 생성
+                let shuffledWords = Array.isArray(q.shuffledWords) ? q.shuffledWords : [];
+                if (q.type === 'unscramble' && shuffledWords.length === 0 && q.answerText) {
+                    shuffledWords = q.answerText.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "").split(/\s+/).sort(() => Math.random() - 0.5);
+                }
+
+                return {
+                    q: q.q || '',
+                    type: q.type || 'mcq',
+                    questionCategory: q.questionCategory || '제목',
+                    choices: choices,
+                    answer: parseInt(q.answer) || 1,
+                    answerText: q.answerText || '',
+                    shuffledWords: shuffledWords
+                };
+            });
+        }
+
+        // RENDER PRINTABLE PAPER PREVIEW
+        function renderPaperPreview() {
+            if (!examData) return;
+
+            const printSheet = document.getElementById('print-sheet');
+            if (currentLevel === 'elementary_junior') {
+                printSheet.classList.add('junior-mode');
+            } else {
+                printSheet.classList.remove('junior-mode');
+            }
+
+            // ------------------------------------
+            // Section 1: Vocabulary
+            // ------------------------------------
+            const vGrid = document.getElementById('paper-vocab-grid');
+            const vMatchingContainer = document.getElementById('paper-vocab-matching-container');
+            
+            const activeVocab = [...examData.vocab.slice(0, vocabCount)];
+            while(activeVocab.length < vocabCount) {
+                activeVocab.push({ word: "________________", mean: "________________" });
+            }
+
+            const instructionEl = document.getElementById('paper-vocab-instruction-display');
+
+            if (vocabType === 'matching') {
+                vGrid.classList.add('hidden');
+                vMatchingContainer.classList.remove('hidden');
+                if (instructionEl) {
+                    instructionEl.innerHTML = `<i class="fa-solid fa-star text-amber-500 mr-1.5"></i>※ [선 잇기] 다음 그림에 해당하는 올바른 영어 단어까지 예쁜 선을 그어 연결하세요.`;
+                }
+                renderMatchingVocab(vMatchingContainer, activeVocab);
+            } else {
+                vGrid.classList.remove('hidden');
+                vMatchingContainer.classList.add('hidden');
+                
+                if (instructionEl) {
+                    if (vocabType === 'mean') {
+                        instructionEl.innerHTML = `<i class="fa-solid fa-pencil text-slate-700 mr-1.5"></i>※ 다음 영어 단어의 알맞은 뜻을 기입란에 서술하시오.`;
+                    } else if (vocabType === 'eng') {
+                        instructionEl.innerHTML = `<i class="fa-solid fa-pencil text-slate-700 mr-1.5"></i>※ 다음 한글 뜻을 보고 알맞은 영어 단어 스펠링을 기입란에 서술하시오.`;
+                    } else {
+                        instructionEl.innerHTML = `<i class="fa-solid fa-pencil text-slate-700 mr-1.5"></i>※ 다음 제시어의 알맞은 의미(뜻 또는 영어 스펠링)를 기입란에 서술하시오.`;
+                    }
+                }
+
+                vGrid.innerHTML = '';
+                activeVocab.forEach((item, idx) => {
+                    const cell = document.createElement('div');
+                    cell.className = "flex flex-col border border-slate-200 p-2.5 rounded-lg bg-slate-50/40 relative";
+                    
+                    let isWordToMean = true;
+                    if (vocabType === 'eng') {
+                        isWordToMean = false;
+                    } else if (vocabType === 'mixed') {
+                        isWordToMean = (idx % 2 === 0);
+                    }
+
+                    let textGiven = "";
+                    let answerDisplay = "";
+
+                    if (isWordToMean) {
+                        textGiven = `<span class="text-slate-900 font-bold flex items-center gap-1.5">
+                            <span class="text-[10px] text-slate-400 bg-slate-200 px-1 py-0.5 rounded-full font-sans">${idx + 1}</span>
+                            ${item.word}
+                        </span>`;
+                        answerDisplay = isPaperTeacherMode 
+                            ? `<span class="teacher-answer pt-1.5 text-center border-t border-dashed border-slate-300 text-[11px]">${item.mean}</span>`
+                            : `<span class="writing-line"></span>`;
+                    } else {
+                        textGiven = `<span class="text-slate-900 font-bold flex items-center gap-1.5">
+                            <span class="text-[10px] text-slate-400 bg-slate-200 px-1 py-0.5 rounded-full font-sans">${idx + 1}</span>
+                            ${item.mean}
+                        </span>`;
+                        answerDisplay = isPaperTeacherMode 
+                            ? `<span class="teacher-answer pt-1.5 text-center border-t border-dashed border-slate-300 text-[11px]">${item.word}</span>`
+                            : `<span class="writing-line"></span>`;
+                    }
+
+                    cell.innerHTML = `
+                        <div class="flex flex-col justify-between h-full min-h-[60px]">
+                            ${textGiven}
+                            ${answerDisplay}
+                        </div>
+                    `;
+                    vGrid.appendChild(cell);
+                });
+            }
+
+            // ------------------------------------
+            // Section 2: Reading Comprehension
+            // ------------------------------------
+            const rList = document.getElementById('paper-reading-list');
+            rList.innerHTML = '';
+            
+            const activeReading = [...examData.reading.slice(0, readingCount)];
+            while(activeReading.length < readingCount) {
+                activeReading.push({
+                    passage: "The custom reading passage content has not been defined yet. Please add a passage in the teacher dashboard panel.",
+                    questions: [
+                        { q: "Choose the correct theme of this paragraph.", type: "mcq", questionCategory: "제목", choices: ["Theme A", "Theme B", "Theme C", "Theme D", "Theme E"], answer: 1, answerText: "", shuffledWords: [] },
+                        { q: "Which word best fits the blank space?", type: "mcq", questionCategory: "추론", choices: ["Word A", "Word B", "Word C", "Word D", "Word E"], answer: 1, answerText: "", shuffledWords: [] },
+                        { q: "What can be inferred from the passage?", type: "descriptive", questionCategory: "서술", choices: [], answer: null, answerText: "Inference Explanation Text", shuffledWords: [] }
+                    ]
+                });
+            }
+
+            activeReading.forEach((pass, pIdx) => {
+                const passBlock = document.createElement('div');
+                passBlock.className = "avoid-break border border-slate-300 p-5 rounded-xl bg-white space-y-4 shadow-sm";
+                
+                let questionsHTML = '';
+                pass.questions.forEach((q, qIdx) => {
+                    const overallQNum = pIdx * 3 + vocabCount + 1 + qIdx;
+                    const isMCQ = q.type === 'mcq' || (!q.type && q.choices && q.choices.length > 0);
+                    const isUnscramble = q.type === 'unscramble';
+                    const isDescriptive = q.type === 'descriptive';
+                    
+                    const catBadge = q.questionCategory 
+                        ? `<span class="bg-indigo-50 border border-indigo-200 text-indigo-700 text-[10px] font-bold px-1.5 py-0.5 rounded ml-1.5">${q.questionCategory}</span>` 
+                        : '';
+
+                    let questionContentHTML = '';
+
+                    if (isDescriptive) {
+                        const answerBox = isPaperTeacherMode
+                            ? `<div class="teacher-answer bg-rose-50/50 p-2.5 border-l-2 border-rose-500 rounded text-[12px] mt-1.5">정답 예시: ${q.answerText || '미작성'}</div>`
+                            : `<div class="writing-line"></div>`;
+                        
+                        questionContentHTML = `
+                            <div class="mt-2.5">
+                                ${answerBox}
+                            </div>
+                        `;
+                    } else if (isUnscramble) {
+                        const chipsHTML = (q.shuffledWords || []).map(word => `
+                            <span class="border border-slate-300 bg-slate-50 px-2 py-0.5 rounded text-[10.5px] font-sans font-medium text-slate-700">${word}</span>
+                        `).join(' ');
+
+                        const answerBox = isPaperTeacherMode
+                            ? `<div class="teacher-answer bg-rose-50/50 p-2.5 border-l-2 border-rose-500 rounded text-[12px] mt-1.5">정답: ${q.answerText || '미작성'}</div>`
+                            : `<div class="writing-line"></div>`;
+
+                        questionContentHTML = `
+                            <div class="mt-2 space-y-2">
+                                <div class="flex flex-wrap gap-1 py-1.5 bg-slate-50 px-2.5 rounded border border-dashed border-slate-300">
+                                    ${chipsHTML || '<span class="text-slate-400">단어가 존재하지 않습니다.</span>'}
+                                </div>
+                                ${answerBox}
+                            </div>
+                        `;
+                    } else {
+                        // Standard MCQ - Fixed choices rendering layout (Avoiding the '< | >' tag issue)
+                        let choicesHTML = '';
+                        const choices = q.choices || [];
+                        choices.forEach((choice, cIdx) => {
+                            const isCoreAnswer = (q.answer === (cIdx + 1));
+                            const styleClass = (isPaperTeacherMode && isCoreAnswer) ? 'class="teacher-answer bg-rose-50 px-2 rounded border border-rose-200 font-bold"' : '';
+                            const numSymbol = ['①', '②', '③', '④', '⑤'][cIdx] || `${cIdx+1}.`;
+                            choicesHTML += `<li ${styleClass}>${numSymbol} ${choice}</li>`;
+                        });
+
+                        const correctMarker = isPaperTeacherMode ? `<span class="teacher-answer text-[12px] ml-1">[정답: ${q.answer}]</span>` : '';
+
+                        questionContentHTML = `
+                            <ul class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-[11.5px] text-slate-700 mt-1.5 pl-1 font-sans">
+                                ${choicesHTML}
+                            </ul>
+                        `;
+                    }
+
+                    questionsHTML += `
+                        <div class="mt-4 first:mt-0 pb-3 border-b border-slate-100 last:border-none last:pb-0">
+                            <p class="font-bold text-slate-900 text-[12.5px]">${overallQNum}. ${q.q || '질문이 없습니다.'} ${catBadge}</p>
+                            ${questionContentHTML}
+                        </div>
+                    `;
+                });
+
+                const juniorHeadingDeco = currentLevel === 'elementary_junior' ? '✨ ' : '';
+
+                // NEW STACKED PASSAGE & QUESTIONS LAYOUT: Passage on TOP, Questions BELOW
+                passBlock.innerHTML = `
+                    <div class="space-y-4">
+                        <!-- Passage (Top) -->
+                        <div class="bg-slate-50 p-4 border border-slate-200 rounded-lg text-[12px] font-serif leading-relaxed italic text-slate-800 relative">
+                            <span class="font-bold text-indigo-900 not-italic block mb-2 text-xs"><i class="fa-solid fa-book-open text-indigo-600 mr-1"></i> [${juniorHeadingDeco}지문 ${pIdx+1}]</span>
+                            ${pass.passage}
+                        </div>
+                        <!-- Questions (Bottom) -->
+                        <div class="text-[12px] font-serif space-y-4">
+                            ${questionsHTML}
+                        </div>
+                    </div>
+                `;
+                rList.appendChild(passBlock);
+            });
+
+            // ------------------------------------
+            // Section 3: Translation
+            // ------------------------------------
+            const tList = document.getElementById('paper-translation-list');
+            tList.innerHTML = '';
+            
+            const activeTranslation = [...examData.translation.slice(0, translationCount)];
+            while(activeTranslation.length < translationCount) {
+                activeTranslation.push({ eng: "The original english study sentence will be displayed here.", kor: "지정한 한국어 번역문이 이곳에 표시됩니다." });
+            }
+
+            activeTranslation.forEach((item, idx) => {
+                const row = document.createElement('div');
+                row.className = "avoid-break p-2.5 border border-slate-100 rounded-xl bg-slate-50/10 space-y-2";
+                
+                const answerBox = isPaperTeacherMode
+                    ? `<div class="teacher-answer bg-rose-50/50 p-2 border-l-2 border-rose-500 rounded text-[11.5px]">${item.kor}</div>`
+                    : `<div class="writing-line"></div>`;
+
+                row.innerHTML = `
+                    <div class="font-bold text-slate-800 flex items-center gap-1.5">
+                        <span class="text-[10px] bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded-full">${idx + vocabCount + (readingCount * 3) + 1}</span>
+                        <span>${item.eng}</span>
+                    </div>
+                    ${answerBox}
+                `;
+                tList.appendChild(row);
+            });
+
+            // ------------------------------------
+            // Section 4: Unscramble
+            // ------------------------------------
+            const uList = document.getElementById('paper-unscramble-list');
+            uList.innerHTML = '';
+            
+            const activeUnscramble = [...examData.unscramble.slice(0, unscrambleCount)];
+            while(activeUnscramble.length < unscrambleCount) {
+                activeUnscramble.push({ eng: "This is a sample sentence for word unscramble tests", kor: "단어 어순 배열 주관식을 위한 한국어 의미 힌트 설명입니다." });
+            }
+
+            activeUnscramble.forEach((item, idx) => {
+                const row = document.createElement('div');
+                row.className = "avoid-break p-2.5 border border-slate-100 rounded-xl bg-slate-50/10 space-y-2";
+                
+                const originalWords = item.eng.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "").split(/\s+/);
+                const shuffled = [...originalWords].sort((a, b) => a.length - b.length || a.localeCompare(b));
+
+                const chipsHTML = shuffled.map(word => `
+                    <span class="border border-slate-300 bg-slate-50 px-2 py-0.5 rounded-md text-[10px] font-sans font-medium text-slate-700">${word}</span>
+                `).join(' ');
+
+                const answerBox = isPaperTeacherMode
+                    ? `<div class="teacher-answer bg-rose-50/50 p-2 border-l-2 border-rose-500 rounded text-[11.5px]">${item.eng}</div>`
+                    : `<div class="writing-line"></div>`;
+
+                row.innerHTML = `
+                    <div class="font-bold text-slate-800 flex items-center gap-1.5">
+                        <span class="text-[10px] bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded-full">${idx + vocabCount + (readingCount * 3) + translationCount + 1}</span>
+                        <span>[힌트: ${item.kor}]</span>
+                    </div>
+                    <div class="flex flex-wrap gap-1.5 py-2 bg-slate-50 px-3 rounded-lg border border-dashed border-slate-300">
+                        ${chipsHTML}
+                    </div>
+                    ${answerBox}
+                `;
+                uList.appendChild(row);
+            });
+        }
+
+        // Dedicated rendering engine for visual Picture-Word line matching
+        function renderMatchingVocab(container, activeVocab) {
+            container.innerHTML = '';
+
+            const chunkSize = 5;
+            for (let chunkStart = 0; chunkStart < vocabCount; chunkStart += chunkSize) {
+                const chunk = activeVocab.slice(chunkStart, chunkStart + chunkSize);
+                const scrambled = [...chunk].sort((a, b) => a.word.localeCompare(b.word));
+                
+                const matchingBlock = document.createElement('div');
+                matchingBlock.className = "avoid-break relative border-2 border-slate-200 p-4 rounded-2xl bg-slate-50/20";
+                
+                let svgLinesHTML = '';
+                if (isPaperTeacherMode) {
+                    chunk.forEach((item, leftIdx) => {
+                        const rightIdx = scrambled.indexOf(item);
+                        if (rightIdx !== -1) {
+                            const y1 = (leftIdx * 20) + 10;
+                            const y2 = (rightIdx * 20) + 10;
+                            svgLinesHTML += `<line x1="8%" y1="${y1}%" x2="92%" y2="${y2}%" stroke="#e11d48" stroke-width="2.5" stroke-dasharray="4 3" />`;
+                        }
+                    });
+                }
+
+                let leftColsHTML = '';
+                let rightColsHTML = '';
+
+                for (let i = 0; i < chunkSize; i++) {
+                    const lItem = chunk[i];
+                    const rItem = scrambled[i];
+                    const num = chunkStart + i + 1;
+                    const emoji = getEmojiForWord(lItem.word, lItem.mean);
+
+                    leftColsHTML += `
+                        <div class="h-11 flex items-center justify-between bg-white border border-slate-200 px-3.5 rounded-xl shadow-sm w-[42%] relative">
+                            <span class="font-bold text-xs text-slate-400 font-sans">${num}</span>
+                            <div class="flex items-center gap-2">
+                                <span class="text-lg">${emoji}</span>
+                                <span class="text-[11px] font-bold text-slate-700 truncate max-w-[80px]">${lItem.mean}</span>
+                            </div>
+                            <div class="w-2 h-2 rounded-full bg-slate-400 absolute right-[-4px] top-4.5" style="transform:translateY(1.5px);"></div>
+                        </div>
+                    `;
+
+                    rightColsHTML += `
+                        <div class="h-11 flex items-center justify-start bg-white border border-slate-200 px-3.5 rounded-xl shadow-sm w-[42%] relative">
+                            <div class="w-2 h-2 rounded-full bg-slate-400 absolute left-[-4px] top-4.5" style="transform:translateY(1.5px);"></div>
+                            <span class="text-[11px] font-bold text-slate-800 ml-2 uppercase tracking-wide truncate max-w-[120px]">${rItem.word}</span>
+                        </div>
+                    `;
+                }
+
+                matchingBlock.innerHTML = `
+                    <div class="absolute inset-0 w-full h-full pointer-events-none" style="z-index: 10;">
+                        <svg class="w-full h-full">
+                            ${svgLinesHTML}
+                        </svg>
+                    </div>
+                    <div class="flex justify-between items-center h-72 relative">
+                        <div class="flex flex-col justify-between h-full w-full">
+                            ${leftColsHTML.split('</div>').map((card, idx) => {
+                                if (idx === chunkSize) return '';
+                                return `<div class="flex justify-between items-center">${card}</div>`;
+                            }).join('')}
+                        </div>
+                        
+                        <div class="absolute right-0 top-0 bottom-0 left-0 flex flex-col justify-between pointer-events-none">
+                            ${rightColsHTML.split('</div>').map((card, idx) => {
+                                if (idx === chunkSize) return '';
+                                return `<div class="flex justify-end items-center">${card}</div>`;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+                container.appendChild(matchingBlock);
+            }
+        }
+
+        // Paper Preview View Controller toggles (Student version vs Teacher version)
+        function togglePaperAnswerView(isTeacher) {
+            isPaperTeacherMode = isTeacher;
+            const btnStudent = document.getElementById('paper-btn-student');
+            const btnTeacher = document.getElementById('paper-btn-teacher');
+
+            if(isTeacher) {
+                btnTeacher.className = "py-1.5 bg-indigo-600 text-white font-bold text-xs rounded transition shadow";
+                btnStudent.className = "py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded transition";
+            } else {
+                btnStudent.className = "py-1.5 bg-indigo-600 text-white font-bold text-xs rounded transition shadow";
+                btnTeacher.className = "py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded transition";
+            }
+            renderPaperPreview();
+        }
+
+        // Toggle page breaks for high quality printing output
+        function togglePageBreak(elementId) {
+            const el = document.getElementById(elementId);
+            const btn = document.getElementById(`btn-${elementId}`);
+            if(!el || !btn) return;
+            
+            if(el.classList.contains('print-page-break')) {
+                el.className = "";
+                el.innerHTML = "";
+                btn.className = "w-full text-left bg-slate-50 hover:bg-slate-100 p-2 rounded border border-slate-200 text-[10px] font-medium flex justify-between items-center transition";
+                btn.querySelector('i').className = "fa-solid fa-plus-circle text-slate-400";
+                showToast("해당 영역의 강제 페이지 나눔선이 제거되었습니다.");
+            } else {
+                el.className = "print-page-break border-t border-dashed border-amber-400 my-4 relative";
+                el.innerHTML = `<span class="page-break-indicator absolute -top-2.5 left-2 bg-amber-400 text-slate-950 px-1.5 py-0.5 rounded text-[8px] font-bold">인쇄 시 이 지점에서 다음 페이지로 분절됨</span>`;
+                btn.className = "w-full text-left bg-rose-50 hover:bg-rose-100 p-2 rounded border border-rose-200 text-[10px] font-bold text-rose-700 flex justify-between items-center transition";
+                btn.querySelector('i').className = "fa-solid fa-trash-can text-rose-500";
+                showToast("인쇄 시 강제 줄 바꿈 처리선이 설정되었습니다.");
+            }
+        }
+
+        function triggerPrint() {
+            window.print();
+        }
+
+        // Clean and extract valid JSON structures even if AI output contains markdown block wrappers
+        function parseJsonSafely(rawString) {
+            if (!rawString) return null;
+            let clean = rawString.trim();
+            if (clean.startsWith("```")) {
+                clean = clean.replace(/^```[a-zA-Z]*\s*/, "").replace(/\s*```$/, "");
+            }
+            return JSON.parse(clean.trim());
+        }
+
+        // -------------------------------------------------------------------------
+        // GEMINI AI INTEGRATED QUESTION GENERATORS (ROBUST STRUCTURAL SHEETS ENGINE)
+        // -------------------------------------------------------------------------
+
+        // 1. AI Vocab Generator
+        async function generateAIVocab() {
+            const overlay = document.getElementById('ai-loading-overlay');
+            const stepText = document.getElementById('ai-loading-step');
+            overlay.classList.remove('hidden');
+            stepText.innerText = `[${getLevelName()}] 수준의 어휘 및 한국어 뜻 생성 중...`;
+
+            const prompt = `영어 어휘 평가용 단어 세트 생성 요청:
+            대상 레벨: ${getLevelName()}
+            필요 단어 수: ${vocabCount}개
+            조건: 해당 대상 학생들에게 적합한 필수/핵심 단어로 영어(word)와 한국어 뜻(mean)을 생성하세요. 무작위로 다양하게 생성해야 합니다.`;
+
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }],
+                systemInstruction: { parts: [{ text: "너는 수준별 최적의 영단어 사전을 설계하는 어휘 전문가야. 중복되지 않고 난이도에 알맞은 참신한 단어와 정확한 뜻을 JSON 객체 형식으로 생성해줘." }] },
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "OBJECT",
+                        properties: {
+                            vocab: {
+                                type: "ARRAY",
+                                items: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        word: { type: "STRING" },
+                                        mean: { type: "STRING" }
+                                    },
+                                    required: ["word", "mean"]
+                                }
+                            }
+                        },
+                        required: ["vocab"]
+                    }
+                }
+            };
+
+            const result = await makeGeminiCallWithRetry(payload, stepText, "단어 목록 정제 중...");
+            overlay.classList.add('hidden');
+
+            if (result) {
+                try {
+                    const parsed = parseJsonSafely(result);
+                    if (parsed && parsed.vocab) {
+                        examData.vocab = parsed.vocab;
+                        initializeEditorInputs();
+                        syncHeaderData();
+                        renderPaperPreview();
+                        showToast(`🪄 ${vocabCount}개의 AI 추천 단어가 새롭게 생성되었습니다.`);
+                    } else {
+                        throw new Error("Invalid Output format");
+                    }
+                } catch (e) {
+                    openModal("단어 생성 오류", "AI 단어장 파싱에 실패했습니다. 다시 시도해 주세요.");
+                }
+            } else {
+                openModal("AI 통신 실패", "AI 문제 생성기 호출에 실패했습니다. API Key를 확인하시거나 네트워크 상태를 점검한 후 다시 시도해 주세요.");
+            }
+        }
+
+        // 2. AI Translation Generator
+        async function generateAITranslation() {
+            const overlay = document.getElementById('ai-loading-overlay');
+            const stepText = document.getElementById('ai-loading-step');
+            overlay.classList.remove('hidden');
+            stepText.innerText = `[${getLevelName()}] 수준의 번역용 문장 및 한글 해석 생성 중...`;
+
+            const prompt = `영한해석 평가용 문장 세트 생성 요청:
+            대상 레벨: ${getLevelName()}
+            필요 문장 수: ${translationCount}개
+            조건: 학습 수준에 맞고 유용한 구문/표현이 포함된 완성도 높은 새로운 영어 문장(eng)과 자연스러운 한국어 해석 번역(kor)을 만드세요.`;
+
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }],
+                systemInstruction: { parts: [{ text: "너는 영한 번역 평가용 고급 예문을 설계하는 구문 전문가야. 어법상 오류가 없고 어휘 수준에 최적화된 새로운 영어 문장과 매끄러운 한글 번역 세트를 JSON 객체 형식으로 생성해줘." }] },
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "OBJECT",
+                        properties: {
+                            translation: {
+                                type: "ARRAY",
+                                items: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        eng: { type: "STRING" },
+                                        kor: { type: "STRING" }
+                                    },
+                                    required: ["eng", "kor"]
+                                }
+                            }
+                        },
+                        required: ["translation"]
+                    }
+                }
+            };
+
+            const result = await makeGeminiCallWithRetry(payload, stepText, "해석 문장 다듬는 중...");
+            overlay.classList.add('hidden');
+
+            if (result) {
+                try {
+                    const parsed = parseJsonSafely(result);
+                    if (parsed && parsed.translation) {
+                        examData.translation = parsed.translation;
+                        initializeEditorInputs();
+                        syncHeaderData();
+                        renderPaperPreview();
+                        showToast(`🪄 ${translationCount}개의 AI 추천 해석 문장들이 새롭게 생성되었습니다.`);
+                    } else {
+                        throw new Error("Invalid Output format");
+                    }
+                } catch (e) {
+                    openModal("해석 생성 오류", "AI 해석 예문 파싱에 실패했습니다. 다시 시도해 주세요.");
+                }
+            } else {
+                openModal("AI 통신 실패", "AI 문제 생성기 호출에 실패했습니다. API Key를 확인하시거나 네트워크 상태를 점검한 후 다시 시도해 주세요.");
+            }
+        }
+
+        // 3. AI Unscramble Generator
+        async function generateAIUnscramble() {
+            const overlay = document.getElementById('ai-loading-overlay');
+            const stepText = document.getElementById('ai-loading-step');
+            overlay.classList.remove('hidden');
+            stepText.innerText = `[${getLevelName()}] 수준의 영작/어순배열용 영어 문장 및 한국어 힌트 생성 중...`;
+
+            const prompt = `어순배열 평가용 문장 세트 생성 요청:
+            대상 레벨: ${getLevelName()}
+            필요 문장 수: ${unscrambleCount}개
+            조건: 핵심 문법 요소가 담긴 새로운 영어 문장(eng)과 문장을 유추할 수 있는 명료한 한글 뜻 힌트(kor)를 만드세요.`;
+
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }],
+                systemInstruction: { parts: [{ text: "너는 영어 서술형 어순배열 평가 예문을 설계하는 서술형 영작 전문가야. 영작 조건에 맞고 난이도에 최적화된 새로운 영어 원형 문장과 명료한 한글 힌트 세트를 JSON 객체 형식으로 생성해줘." }] },
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "OBJECT",
+                        properties: {
+                            unscramble: {
+                                type: "ARRAY",
+                                items: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        eng: { type: "STRING" },
+                                        kor: { type: "STRING" }
+                                    },
+                                    required: ["eng", "kor"]
+                                }
+                            }
+                        },
+                        required: ["unscramble"]
+                    }
+                }
+            };
+
+            const result = await makeGeminiCallWithRetry(payload, stepText, "배열 문장 정렬 중...");
+            overlay.classList.add('hidden');
+
+            if (result) {
+                try {
+                    const parsed = parseJsonSafely(result);
+                    if (parsed && parsed.unscramble) {
+                        examData.unscramble = parsed.unscramble;
+                        initializeEditorInputs();
+                        syncHeaderData();
+                        renderPaperPreview();
+                        showToast(`🪄 ${unscrambleCount}개의 AI 추천 영작/배열 문장들이 새롭게 생성되었습니다.`);
+                    } else {
+                        throw new Error("Invalid Output format");
+                    }
+                } catch (e) {
+                    openModal("배열 생성 오류", "AI 배열 문항 파싱에 실패했습니다. 다시 시도해 주세요.");
+                }
+            } else {
+                openModal("AI 통신 실패", "AI 문제 생성기 호출에 실패했습니다. API Key를 확인하시거나 네트워크 상태를 점검한 후 다시 시도해 주세요.");
+            }
+        }
+
+        // 4. AI Reading Passage + Questions Generator (지문 자체를 AI가 통째로 새로 만드는 기능)
+        async function generateAIReadingPassages() {
+            const overlay = document.getElementById('ai-loading-overlay');
+            const stepText = document.getElementById('ai-loading-step');
+            overlay.classList.remove('hidden');
+            stepText.innerText = `[${getLevelName()}] 수준에 매칭되는 ${readingCount}개 지문 및 문항 일괄 생성 중...`;
+
+            const prompt = `영어 독해 평가 시스템 일괄 출제 요청:
+            대상 레벨: ${getLevelName()}
+            필요 지문 수: ${readingCount}개 (각 지문당 3개씩 문제 구성)
+            조건: 대상 학생 수준에 적절하고 흥미로운 주제(과학, 문화, 역사, 사회, 교훈적 일화 등)의 독해 지문들을 완전히 새로 창작하고, 각 지문마다 아래 8개 평가유형 중 3개를 무작위 조합해 출제하세요.
+            [유형: 제목, 요지, 내용일치, 내용불일치, 추론, 대명사지칭, 서술, 배열]`;
+
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }],
+                systemInstruction: { parts: [{ text: "너는 수능 및 내신 기출 평가지를 설계하는 일류 영어 교수진이야. 오류가 일절 없는 참신한 새로운 지문과 정합성 높은 문제를 JSON 구조로 완벽히 출제해줘." }] },
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "OBJECT",
+                        properties: {
+                            reading: {
+                                type: "ARRAY",
+                                items: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        passage: { type: "STRING" },
+                                        questions: {
+                                            type: "ARRAY",
+                                            items: {
+                                                type: "OBJECT",
+                                                properties: {
+                                                    q: { type: "STRING" },
+                                                    type: { type: "STRING", enum: ["mcq", "descriptive", "unscramble"] },
+                                                    questionCategory: { type: "STRING", enum: ["제목", "요지", "내용일치", "내용불일치", "추론", "대명사지칭", "서술", "배열"] },
+                                                    choices: {
+                                                        type: "ARRAY",
+                                                        items: { type: "STRING" }
+                                                    },
+                                                    answer: { type: "INTEGER" },
+                                                    answerText: { type: "STRING" },
+                                                    shuffledWords: {
+                                                        type: "ARRAY",
+                                                        items: { type: "STRING" }
+                                                    }
+                                                },
+                                                required: ["q", "type", "questionCategory", "choices", "answer", "answerText", "shuffledWords"]
+                                            }
+                                        }
+                                    },
+                                    required: ["passage", "questions"]
+                                }
+                            }
+                        },
+                        required: ["reading"]
+                    }
+                }
+            };
+
+            const result = await makeGeminiCallWithRetry(payload, stepText, "지문 및 문항 일괄 조립 중...");
+            overlay.classList.add('hidden');
+
+            if (result) {
+                try {
+                    const parsed = parseJsonSafely(result);
+                    if (parsed && parsed.reading) {
+                        const sanitizedReading = parsed.reading.slice(0, readingCount).map(item => ({
+                            passage: item.passage,
+                            questions: sanitizeReadingQuestions(item.questions)
+                        }));
+                        examData.reading = sanitizedReading;
+                        initializeEditorInputs();
+                        syncHeaderData();
+                        renderPaperPreview();
+                        showToast(`🪄 ${readingCount}개의 AI 지문 및 맞춤 문항 출제가 완료되었습니다.`);
+                    } else {
+                        throw new Error("Invalid Output format");
+                    }
+                } catch (e) {
+                    openModal("독해 생성 오류", "AI 지문 파싱에 실패했습니다. 다시 시도해 주세요.");
+                }
+            } else {
+                openModal("AI 통신 실패", "AI 문제 생성기 호출에 실패했습니다. API Key를 확인하시거나 네트워크 상태를 점검한 후 다시 시도해 주세요.");
+            }
+        }
+
+        // 5. Generate questions for a SINGLE PASSAGE based on its index
+        async function generateAIQuestionsForPassage(pIdx) {
+            const passageEl = document.getElementById(`edit-passage-${pIdx}`);
+            if (!passageEl) return;
+            const passageText = passageEl.value.trim();
+
+            if (!passageText || passageText.length < 10) {
+                openModal("지문 확인 필요", "선생님께서 먼저 독해 지문을 기입해 주셔야 해당 지문을 기반으로 AI가 문제를 만들 수 있습니다.");
+                return;
+            }
+
+            const overlay = document.getElementById('ai-loading-overlay');
+            const stepText = document.getElementById('ai-loading-step');
+            overlay.classList.remove('hidden');
+            
+            let koreanLevelName = getLevelName();
+            stepText.innerText = `지문 ${pIdx+1} 분석 및 8개 유형 매칭 분석 중...`;
+
+            const prompt = `영어 독해 지문 기반 맞춤형 시험 문제 출제 의뢰:
+선생님이 작성한 지문: "${passageText}"
+대상 학년 수준: ${koreanLevelName}
+
+위 독해 지문을 면밀히 분석한 후, 다음 8가지 문항 유형 중 지문의 구조와 내용에 가장 부합하는 최상의 3가지 유형을 선정하여 총 3문제를 출제해 주세요.
+[선택 가능 유형: 제목, 요지, 내용일치, 내용불일치, 추론, 대명사지칭, 서술, 배열]
+
+문제 조건:
+1. 질문 텍스트는 한국어로 명료하게 작성해 주세요.
+2. "choices" 배열은 반드시 각각의 보기가 독립된 원소로 들어있는 크기가 정확히 5인 JSON 배열이어야 합니다 (예: ["보기1", "보기2", "보기3", "보기4", "보기5"]).
+3. 각 문제는 아래 JSON 스키마 형식에 맞춰 정확한 JSON 배열 형태로만 반환하세요.`;
+
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }],
+                systemInstruction: { parts: [{ text: "너는 영미권 수능 및 내신 기출문제를 전문적으로 설계하는 정교한 영어 시험 출제 위원이야. 선생님이 제공한 지문에 딱 부합하며, 한치의 오류도 없는 최고의 퀄리티 문항을 지정된 JSON 구조로 완벽히 리턴해야해." }] },
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "ARRAY",
+                        items: {
+                            type: "OBJECT",
+                            properties: {
+                                q: { type: "STRING" },
+                                type: { type: "STRING", enum: ["mcq", "descriptive", "unscramble"] },
+                                questionCategory: { type: "STRING", enum: ["제목", "요지", "내용일치", "내용불일치", "추론", "대명사지칭", "서술", "배열"] },
+                                choices: {
+                                    type: "ARRAY",
+                                    items: { type: "STRING" }
+                                },
+                                answer: { type: "INTEGER" },
+                                answerText: { type: "STRING" },
+                                shuffledWords: {
+                                    type: "ARRAY",
+                                    items: { type: "STRING" }
+                                }
+                            },
+                            required: ["q", "type", "questionCategory", "choices", "answer", "answerText", "shuffledWords"]
+                        }
+                    }
+                }
+            };
+
+            const result = await makeGeminiCallWithRetry(payload, stepText, "지문 분석 완료! 3문항 수작업 가다듬는 중...");
+            overlay.classList.add('hidden');
+
+            if (result) {
+                try {
+                    const parsedQuestions = parseJsonSafely(result);
+                    if (parsedQuestions && parsedQuestions.length >= 3) {
+                        const sanitized = sanitizeReadingQuestions(parsedQuestions);
+                        examData.reading[pIdx] = {
+                            passage: passageText,
+                            questions: sanitized.slice(0, 3)
+                        };
+                        initializeEditorInputs();
+                        syncHeaderData();
+                        renderPaperPreview();
+                        showToast(`지문 ${pIdx+1}에 최적화된 AI 맞춤 문항 3가지가 실시간 정렬되었습니다.`);
+                    } else {
+                        throw new Error("Invalid Output array length");
+                    }
+                } catch (e) {
+                    console.error(e);
+                    openModal("문항 해석 오류", "AI가 생성한 데이터를 포맷팅하는 데 실패했습니다. 다시 한 번 버튼을 눌러 출제해 주세요.");
+                }
+            } else {
+                openModal("AI 통신 실패", "AI 문제 생성기 호출에 실패했습니다. API Key를 확인하시거나 네트워크 상태를 점검한 후 다시 시도해 주세요.");
+            }
+        }
+
+        // 6. Generate questions for ALL PASSAGES simultaneously (기존 수동 입력 지문 연동형 일괄 생성)
+        async function generateAIQuestionsAllPassages() {
+            // Read and validate all textareas
+            const passages = [];
+            for (let i = 0; i < readingCount; i++) {
+                const passageEl = document.getElementById(`edit-passage-${i}`);
+                const txt = passageEl ? passageEl.value.trim() : "";
+                if (!txt || txt.length < 10) {
+                    openModal("지문 누락 확인", `${i+1}번째 지문 상자가 비어있거나 너무 짧습니다. 모든 지문 영역에 지문을 작성한 다음 버튼을 클릭해 주세요.`);
+                    return;
+                }
+                passages.push({ id: i, text: txt });
+            }
+
+            const overlay = document.getElementById('ai-loading-overlay');
+            const stepText = document.getElementById('ai-loading-step');
+            overlay.classList.remove('hidden');
+            
+            let koreanLevelName = getLevelName();
+            stepText.innerText = `전체 ${readingCount}개 지문 통합 AI 분석 시뮬레이션 가동 중...`;
+
+            const prompt = `영어 독해 평가 시스템 일괄 출제 요청:
+선생님이 제공한 다음 지문 목록을 분석하여 각 지문별로 최적의 3문항씩 총 ${readingCount * 3}문항을 생성하세요.
+
+지문 목록:
+${passages.map(p => `지문 ID [${p.id}]: "${p.text}"`).join('\n\n')}
+
+대상 학년 수준: ${koreanLevelName}
+각 지문별 문제 구성 요건:
+각 지문별로 [제목, 요지, 내용일치, 내용불일치, 추론, 대명사지칭, 서술, 배열] 유형 중 가장 어울리는 3가지 유형을 선정해 중복되지 않는 고유한 유형의 문제를 3개씩 출제해 주세요.
+"choices" 배열은 절대로 단일 기호 문자열로 반환하지 말고, 독립된 원소 5개 리스트로 정확히 반환해 주십시오.`;
+
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }],
+                systemInstruction: { parts: [{ text: "너는 대치동 및 특목고 영어 내신 대비 최고급 영어 기출 평가지를 설계하는 일류 교수진이야. 오류가 일절 없는 정합성과 정확도를 가진 평가 데이터 세트를 JSON 구조로만 정교하게 출제해 줘." }] },
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "OBJECT",
+                        properties: {
+                            reading: {
+                                type: "ARRAY",
+                                items: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        passageId: { type: "INTEGER" },
+                                        questions: {
+                                            type: "ARRAY",
+                                            items: {
+                                                type: "OBJECT",
+                                                properties: {
+                                                    q: { type: "STRING" },
+                                                    type: { type: "STRING", enum: ["mcq", "descriptive", "unscramble"] },
+                                                    questionCategory: { type: "STRING", enum: ["제목", "요지", "내용일치", "내용불일치", "추론", "대명사지칭", "서술", "배열"] },
+                                                    choices: {
+                                                        type: "ARRAY",
+                                                        items: { type: "STRING" }
+                                                    },
+                                                    answer: { type: "INTEGER" },
+                                                    answerText: { type: "STRING" },
+                                                    shuffledWords: {
+                                                        type: "ARRAY",
+                                                        items: { type: "STRING" }
+                                                    }
+                                                },
+                                                required: ["q", "type", "questionCategory", "choices", "answer", "answerText", "shuffledWords"]
+                                            }
+                                        }
+                                    },
+                                    required: ["passageId", "questions"]
+                                }
+                            }
+                        },
+                        required: ["reading"]
+                    }
+                }
+            };
+
+            const result = await makeGeminiCallWithRetry(payload, stepText, "통합 문제 가공 및 교사용 채점 가이드 취합 중...");
+            overlay.classList.add('hidden');
+
+            if (result) {
+                try {
+                    const parsedData = parseJsonSafely(result);
+                    if (parsedData && parsedData.reading) {
+                        parsedData.reading.forEach(item => {
+                            const pId = item.passageId;
+                            if (examData.reading[pId]) {
+                                const sanitized = sanitizeReadingQuestions(item.questions);
+                                examData.reading[pId].questions = sanitized;
+                            }
+                        });
+                        initializeEditorInputs();
+                        syncHeaderData();
+                        renderPaperPreview();
+                        showToast(`🪄 AI가 ${readingCount}개 전체 지문에 대해 완벽한 문제 구성을 마쳤습니다!`);
+                    } else {
+                        throw new Error("Invalid Output Object Format");
+                    }
+                } catch (e) {
+                    console.error(e);
+                    openModal("문항 해석 오류", "AI가 생성한 데이터를 포맷팅하는 데 실패했습니다. 다시 한 번 버튼을 눌러 출제해 주세요.");
+                }
+            } else {
+                openModal("AI 통신 실패", "AI 문제 생성기 호출에 실패했습니다. API Key를 확인하시거나 네트워크 상태를 점검한 후 다시 시도해 주세요.");
+            }
+        }
+
+        // Shared API connection utility with Exponential backoff retries (Up to 5 times)
+        async function makeGeminiCallWithRetry(payload, statusEl, progressText) {
+            // Environment automatically secures and binds API calls if set to ""
+            const apiKey = ""; 
+            const userCustomKey = localStorage.getItem('monthly_exam_api_key') || '';
+            const cleanedCustomKey = (userCustomKey === 'null' || userCustomKey === 'undefined') ? '' : userCustomKey;
+            
+            const maxRetries = 5;
+            let attempt = 0;
+            let success = false;
+            let resultData = null;
+
+            while (attempt < maxRetries && !success) {
+                try {
+                    let response;
+                    if (cleanedCustomKey) {
+                        response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${cleanedCustomKey}`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify(payload)
+                        });
+                    } else {
+                        // Literal apiKey empty string - guaranteed platform proxy interception
+                        response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify(payload)
+                        });
+                    }
+                    
+                    if (!response.ok) throw new Error("API Request Failed");
+                    
+                    const resJson = await response.json();
+                    const text = resJson.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (text) {
+                        resultData = text;
+                        success = true;
+                    } else {
+                        throw new Error("Invalid Output format");
+                    }
+                } catch (e) {
+                    attempt++;
+                    if (attempt >= maxRetries) {
+                        return null;
+                    }
+                    const delay = Math.pow(2, attempt - 1) * 1000;
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+            }
+            if (success && statusEl && progressText) {
+                statusEl.innerText = progressText;
+            }
+            return resultData;
+        }
+    </script>
+</body>
+</html>
