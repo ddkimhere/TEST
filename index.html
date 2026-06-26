@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YMS 월말평가 인쇄 및 편집 관리 시스템</title>
+    <title>YMS 영어 학업성취도 평가 인쇄 및 AI 관리 시스템</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
@@ -85,16 +85,6 @@
             font-size: 14.5px !important;
         }
 
-        /* Loading Spinner Animation */
-        .spinner-glow {
-            box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
-            animation: pulse-glow 2s infinite ease-in-out;
-        }
-        @keyframes pulse-glow {
-            0%, 100% { transform: scale(1); opacity: 0.9; }
-            50% { transform: scale(1.05); opacity: 1; }
-        }
-
         /* Print media styles */
         @media print {
             body {
@@ -142,7 +132,7 @@
         }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen text-slate-800 pb-16 transition-colors duration-300 font-sans">
+<body class="bg-slate-50 min-h-screen text-slate-800 pb-16 transition-colors duration-300">
 
     <!-- AI Generation Loading Modal Overlay -->
     <div id="ai-loading-overlay" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[200] flex flex-col items-center justify-center hidden">
@@ -155,8 +145,8 @@
                 <h3 class="text-white font-bold text-lg flex items-center justify-center gap-2">
                     <span>Gemini AI 시험지 마법 발동 중</span>
                 </h3>
-                <p id="ai-loading-step" class="text-xs text-indigo-300 font-semibold animate-pulse">지문 내용을 실시간 분석하여 문항을 출제하는 중...</p>
-                <p class="text-[10px] text-slate-500 leading-relaxed">선택하신 학년 수준에 적절한 명품 독해 지문 문항들을 구글 초거대 인공지능이 완벽하게 실시간 맞춤 구조화하고 있습니다. (약 5~10초 소요)</p>
+                <p id="ai-loading-step" class="text-xs text-indigo-300 font-semibold animate-pulse">지문 내용을 분석하여 문제를 조작하는 중...</p>
+                <p class="text-[10px] text-slate-500 leading-relaxed">학년 수준에 최적화된 독해 지문과 한글 질문, 객관식 보기 리스트, 해석 주관식을 AI가 정성스럽게 구성하고 있습니다. (약 5~10초 소요)</p>
             </div>
             <!-- Progress Bar -->
             <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
@@ -175,7 +165,7 @@
                 <div>
                     <h1 class="text-md font-bold tracking-tight flex items-center gap-2">
                         <span>YMS 영어 학업성취도 평가 인쇄 시스템</span>
-                        <span class="text-[10px] bg-indigo-500 text-white font-semibold px-2 py-0.5 rounded-full">AI 마스터 v5.2</span>
+                        <span class="text-[10px] bg-indigo-500 text-white font-semibold px-2 py-0.5 rounded-full">AI 마스터 v5.3</span>
                     </h1>
                     <p id="header-summary" class="text-[11px] text-slate-400 font-medium">지정된 문항 수에 맞게 실시간 배점이 조정됩니다.</p>
                 </div>
@@ -183,17 +173,17 @@
 
             <!-- Global Action Controls -->
             <div class="flex flex-wrap items-center gap-3">
-                <button onclick="generateAIQuestionsAllPassages()" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold px-3.5 py-2 rounded-lg text-xs transition flex items-center gap-1.5 shadow-md font-sans">
+                <button onclick="generateAllExamWithAI()" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold px-3.5 py-2 rounded-lg text-xs transition flex items-center gap-1.5 shadow-md">
                     <i class="fa-solid fa-wand-magic-sparkles text-amber-300 animate-pulse"></i>
-                    <span>🪄 전체 지문 기반 AI 문제 일괄 생성</span>
+                    <span>🪄 AI 시험지 전체 일괄 신규 출제</span>
                 </button>
 
-                <button onclick="toggleTeacherDrawer()" id="btn-teacher-toggle" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-semibold px-3 py-2 rounded-lg text-xs transition flex items-center gap-1.5 font-sans">
+                <button onclick="toggleTeacherDrawer()" id="btn-teacher-toggle" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-semibold px-3 py-2 rounded-lg text-xs transition flex items-center gap-1.5">
                     <i class="fa-solid fa-sliders text-amber-400"></i>
                     <span>선생님 문제 편집기</span>
                 </button>
                 
-                <button onclick="triggerPrint()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-lg text-xs transition flex items-center gap-1.5 shadow-md font-sans">
+                <button onclick="triggerPrint()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-lg text-xs transition flex items-center gap-1.5 shadow-md">
                     <i class="fa-solid fa-print"></i> PDF 다운로드 / 인쇄
                 </button>
             </div>
@@ -206,12 +196,12 @@
         <!-- Teacher Dashboard Drawer (Sliding/Collapsible Panel) -->
         <div id="teacher-drawer" class="no-print hidden mb-6 bg-slate-900 text-slate-100 rounded-xl p-5 border border-slate-800 shadow-2xl space-y-4">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h2 class="text-sm font-bold flex items-center gap-2 text-amber-400 font-sans">
+                <h2 class="text-sm font-bold flex items-center gap-2 text-amber-400">
                     <i class="fa-solid fa-gears"></i> 실시간 시험 문제 빌더 & 문항수 맞춤 관리 도구
                 </h2>
                 <div class="flex gap-2">
-                    <button onclick="generateAIQuestionsAllPassages()" class="bg-indigo-650 hover:bg-indigo-600 border border-indigo-500/50 text-white text-xs font-bold px-3 py-1.5 rounded transition flex items-center gap-1 font-sans">
-                        <i class="fa-solid fa-wand-magic-sparkles text-amber-300 animate-pulse"></i> 전체 지문 AI 문제 일괄 출제
+                    <button onclick="generateAllExamWithAI()" class="bg-indigo-650 hover:bg-indigo-600 border border-indigo-500/50 text-white text-xs font-bold px-3 py-1.5 rounded transition flex items-center gap-1">
+                        <i class="fa-solid fa-wand-magic-sparkles text-amber-300 animate-pulse"></i> 전과목 AI 일괄 새로 출제
                     </button>
                 </div>
             </div>
@@ -221,9 +211,9 @@
                 <div class="md:col-span-1">
                     <label class="block text-slate-400 font-medium mb-1">대상 학년 레벨</label>
                     <select id="config-level" onchange="changeLevel(this.value)" class="w-full bg-slate-800 border border-slate-700 rounded px-2.5 py-1.5 text-white focus:outline-none focus:border-indigo-500 font-bold text-amber-400">
-                        <option value="elementary_junior" selected>초등 저학년 (2~4학년)</option>
+                        <option value="elementary_junior">초등 저학년 (2~4학년)</option>
                         <option value="elementary">초등 고학년 (5~6학년)</option>
-                        <option value="middle">중등부 (Middle)</option>
+                        <option value="middle" selected>중등부 (Middle)</option>
                     </select>
                 </div>
                 <div class="md:col-span-1">
@@ -285,10 +275,10 @@
             <!-- Tab Controls for Bulk Editors -->
             <div class="border-t border-slate-800 pt-3">
                 <div class="flex gap-1.5 border-b border-slate-800 mb-3" id="editor-tabs">
-                    <button onclick="switchEditorTab('vocab')" id="tab-vocab" class="px-3 py-1.5 text-xs font-semibold text-white border-b-2 border-indigo-500 bg-slate-800 rounded-t-md font-sans">단어</button>
-                    <button onclick="switchEditorTab('reading')" id="tab-reading" class="px-3 py-1.5 text-xs font-semibold text-slate-400 hover:text-white rounded-t-md font-sans">독해 지문 및 AI 문항</button>
-                    <button onclick="switchEditorTab('translation')" id="tab-translation" class="px-3 py-1.5 text-xs font-semibold text-slate-400 hover:text-white rounded-t-md font-sans">영한해석</button>
-                    <button onclick="switchEditorTab('unscramble')" id="tab-unscramble" class="px-3 py-1.5 text-xs font-semibold text-slate-400 hover:text-white rounded-t-md font-sans">어순배열</button>
+                    <button onclick="switchEditorTab('vocab')" id="tab-vocab" class="px-3 py-1.5 text-xs font-semibold text-white border-b-2 border-indigo-500 bg-slate-800 rounded-t-md">단어</button>
+                    <button onclick="switchEditorTab('reading')" id="tab-reading" class="px-3 py-1.5 text-xs font-semibold text-slate-400 hover:text-white rounded-t-md">독해 지문 및 AI 문항</button>
+                    <button onclick="switchEditorTab('translation')" id="tab-translation" class="px-3 py-1.5 text-xs font-semibold text-slate-400 hover:text-white rounded-t-md">영한해석</button>
+                    <button onclick="switchEditorTab('unscramble')" id="tab-unscramble" class="px-3 py-1.5 text-xs font-semibold text-slate-400 hover:text-white rounded-t-md">어순배열</button>
                 </div>
 
                 <!-- Vocab Editor Panel -->
@@ -309,10 +299,10 @@
                     <div class="flex justify-between items-center pt-1">
                         <span class="text-[10px] text-slate-500">지정한 문항 수에 맞게 상위 행부터 순서대로 출제됩니다.</span>
                         <div class="flex gap-2">
-                            <button onclick="generateAIVocab()" class="bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold px-3 py-1.5 rounded transition flex items-center gap-1 shadow-md font-sans">
-                                <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i> 🪄 AI 단어장 새로 생성
+                            <button onclick="generateAIVocab()" class="bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold px-3 py-1.5 rounded transition flex items-center gap-1 shadow-md">
+                                <i class="fa-solid fa-wand-magic-sparkles text-amber-300 animate-pulse"></i> <span>🪄 AI 단어장 새로 생성</span>
                             </button>
-                            <button onclick="applyVocabChange()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-1.5 rounded transition font-sans">단어 데이터 반영</button>
+                            <button onclick="applyVocabChange()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-1.5 rounded transition">단어 데이터 반영</button>
                         </div>
                     </div>
                 </div>
@@ -324,15 +314,15 @@
                             <p class="font-bold text-indigo-400 flex items-center gap-1.5"><i class="fa-solid fa-lightbulb"></i> 지문별 수동 입력 & AI 스마트 문제 출제 결합 시스템</p>
                             <p class="text-[11px] text-slate-400">선생님이 지문을 변경하면 AI가 지문의 난이도를 분석해 8개 핵심 유형 중 지문에 가장 부합하는 고품질 문제 3가지를 자동 출제합니다.</p>
                         </div>
-                        <button onclick="generateAIReadingPassages()" class="bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold px-3.5 py-2 rounded-lg transition flex items-center gap-1 shadow-md shrink-0 font-sans">
+                        <button onclick="generateAIReadingPassages()" class="bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold px-3.5 py-2 rounded-lg transition flex items-center gap-1 shadow-md shrink-0">
                             <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i> 🪄 지문+문제 AI 전체 새로 생성
                         </button>
                     </div>
                     <div id="reading-editor-list" class="space-y-4 max-h-96 overflow-y-auto pr-2">
-                        <!-- Generated Dynamically by JS (Contains passage textarea) -->
+                        <!-- Generated Dynamically -->
                     </div>
                     <div class="flex justify-end pt-2 border-t border-slate-800">
-                        <button onclick="applyReadingChange()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-1.5 rounded transition font-sans">독해 지문 전체 적용</button>
+                        <button onclick="applyReadingChange()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-1.5 rounded transition">독해 지문 전체 적용</button>
                     </div>
                 </div>
 
@@ -343,10 +333,10 @@
                     <div class="flex justify-between items-center pt-1">
                         <span class="text-[10px] text-slate-500">지정한 영한해석 문항 수에 맞게 상위 행부터 적용됩니다.</span>
                         <div class="flex gap-2">
-                            <button onclick="generateAITranslation()" class="bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold px-3 py-1.5 rounded transition flex items-center gap-1 shadow-md font-sans">
+                            <button onclick="generateAITranslation()" class="bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold px-3 py-1.5 rounded transition flex items-center gap-1 shadow-md">
                                 <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i> 🪄 AI 해석문 자동 생성
                             </button>
-                            <button onclick="applyTranslationChange()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-1.5 rounded transition font-sans">영한해석 데이터 반영</button>
+                            <button onclick="applyTranslationChange()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-1.5 rounded transition">영한해석 데이터 반영</button>
                         </div>
                     </div>
                 </div>
@@ -361,7 +351,7 @@
                             <button onclick="generateAIUnscramble()" class="bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold px-3 py-1.5 rounded transition flex items-center gap-1 shadow-md font-sans">
                                 <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i> 🪄 AI 배열문 자동 생성
                             </button>
-                            <button onclick="applyUnscrambleChange()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-1.5 rounded transition font-sans">어순배열 데이터 반영</button>
+                            <button onclick="applyUnscrambleChange()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-1.5 rounded transition">어순배열 데이터 반영</button>
                         </div>
                     </div>
                 </div>
@@ -369,10 +359,10 @@
 
             <!-- Global Action Tools -->
             <div class="flex justify-between items-center pt-3 border-t border-slate-800 text-xs font-semibold">
-                <span class="text-amber-500 font-sans"><i class="fa-solid fa-triangle-exclamation"></i> 주의: 페이지를 완전히 나가기 전에 아래 보관하기 버튼을 꼭 누르세요.</span>
+                <span class="text-amber-500"><i class="fa-solid fa-triangle-exclamation"></i> 주의: 페이지를 완전히 나가기 전에 아래 보관하기 버튼을 꼭 누르세요.</span>
                 <div class="flex gap-2">
-                    <button onclick="saveToLocalStorage()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 px-3 py-1.5 rounded-lg transition font-sans"><i class="fa-solid fa-floppy-disk mr-1"></i> 변경안 캐시 보관</button>
-                    <button onclick="resetToDemo()" class="bg-rose-950/40 hover:bg-rose-950 text-rose-300 border border-rose-900/50 px-3 py-1.5 rounded-lg transition font-sans">기본 데모 세트 복원</button>
+                    <button onclick="saveToLocalStorage()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 px-3 py-1.5 rounded-lg transition"><i class="fa-solid fa-floppy-disk mr-1"></i> 변경안 캐시 보관</button>
+                    <button onclick="resetToDemo()" class="bg-rose-950/40 hover:bg-rose-950 text-rose-300 border border-rose-900/50 px-3 py-1.5 rounded-lg transition font-bold">기본 데모 세트 복원</button>
                 </div>
             </div>
         </div>
@@ -388,15 +378,15 @@
                     <div class="bg-gradient-to-r from-purple-500 to-indigo-600 p-4 rounded-xl text-white space-y-2.5 shadow-md">
                         <div class="flex items-center gap-2">
                             <i class="fa-solid fa-wand-magic-sparkles text-amber-300 text-sm animate-bounce"></i>
-                            <h4 class="text-xs font-extrabold tracking-wide font-sans">Gemini AI 일괄 출제</h4>
+                            <h4 class="text-xs font-extrabold tracking-wide">Gemini AI 일괄 신규 출제</h4>
                         </div>
-                        <p class="text-[10px] text-purple-100 leading-relaxed font-sans">선생님이 지문을 먼저 다 입력한 뒤, 이 버튼을 누르면 AI가 모든 지문을 한 번에 분석해 15문제를 일괄 생성해 줍니다.</p>
-                        <button onclick="generateAIQuestionsAllPassages()" class="w-full bg-white text-indigo-700 font-extrabold text-[11px] py-2 rounded-lg hover:bg-indigo-50 transition shadow font-sans">
-                            전체 지문 AI 일괄 출제 시작
+                        <p class="text-[10px] text-purple-100 leading-relaxed">지정된 분량에 맞춰 어휘, 지문, 해석, 배열 문제를 완전히 새로운 내용으로 AI가 한 번에 일괄 생성해 줍니다.</p>
+                        <button onclick="generateAllExamWithAI()" class="w-full bg-white text-indigo-700 font-extrabold text-[11px] py-2 rounded-lg hover:bg-indigo-50 transition shadow">
+                            전과목 AI 일괄 신규 출제 시작
                         </button>
                     </div>
 
-                    <h3 class="text-xs font-extrabold text-slate-900 pb-2 border-b flex items-center justify-between font-sans">
+                    <h3 class="text-xs font-extrabold text-slate-900 pb-2 border-b flex items-center justify-between">
                         <span>인쇄용 퀵 설정 바</span>
                         <i class="fa-solid fa-print text-indigo-600"></i>
                     </h3>
@@ -406,9 +396,9 @@
                         <div class="space-y-1">
                             <label class="block text-[10px] text-slate-500 font-bold font-sans">평가 대상 학년</label>
                             <div class="grid grid-cols-3 gap-1">
-                                <button onclick="changeLevel('elementary_junior')" id="sidebar-btn-elem-jr" class="py-1 px-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded font-semibold text-[10px] transition truncate font-sans">초등 저(2-4)</button>
-                                <button onclick="changeLevel('elementary')" id="sidebar-btn-elem" class="py-1 px-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded font-semibold text-[10px] transition truncate font-sans">초등 고(5-6)</button>
-                                <button onclick="changeLevel('middle')" id="sidebar-btn-mid" class="py-1 px-1 bg-indigo-600 text-white font-bold rounded shadow text-[10px] transition truncate font-sans">중등부</button>
+                                <button onclick="changeLevel('elementary_junior')" id="sidebar-btn-elem-jr" class="py-1 px-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded font-semibold text-[10px] transition truncate">초등 저(2-4)</button>
+                                <button onclick="changeLevel('elementary')" id="sidebar-btn-elem" class="py-1 px-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded font-semibold text-[10px] transition truncate">초등 고(5-6)</button>
+                                <button onclick="changeLevel('middle')" id="sidebar-btn-mid" class="py-1 px-1 bg-indigo-600 text-white font-bold rounded shadow text-[10px] transition truncate">중등부</button>
                             </div>
                         </div>
                         
@@ -470,13 +460,13 @@
                     </div>
 
                     <!-- Custom Page Breaks Controllers -->
-                    <div class="space-y-2 pt-2 border-t text-[11px] text-slate-600">
-                        <div class="flex items-center gap-2 font-bold text-slate-800 font-sans">
+                    <div class="space-y-2 pt-2 border-t text-[11px] text-slate-600 font-sans">
+                        <div class="flex items-center gap-2 font-bold text-slate-800">
                             <i class="fa-solid fa-scissors text-amber-500 text-xs"></i>
                             <span>인쇄 페이지 수동 조절</span>
                         </div>
-                        <p class="text-[10px] text-slate-400 font-sans">특정 대문항의 시작 위치를 강제로 다음 페이지 첫머리로 넘겨 인쇄 구도를 예쁘게 교정할 수 있습니다.</p>
-                        <div class="space-y-1.5 pl-0.5 font-sans">
+                        <p class="text-[10px] text-slate-400">특정 대문항의 시작 위치를 강제로 다음 페이지 첫머리로 넘겨 인쇄 구도를 예쁘게 교정할 수 있습니다.</p>
+                        <div class="space-y-1.5 pl-0.5">
                             <button onclick="togglePageBreak('break-reading')" id="btn-break-reading" class="w-full text-left bg-slate-50 hover:bg-slate-100 p-2 rounded border border-slate-200 text-[10px] font-medium flex justify-between items-center transition">
                                 <span>[II] 독해 시작점 분리</span>
                                 <i class="fa-solid fa-plus-circle text-slate-400"></i>
@@ -493,7 +483,7 @@
                     </div>
 
                     <div class="pt-2 border-t">
-                        <button onclick="triggerPrint()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2.5 rounded-lg transition shadow-md flex items-center justify-center gap-1.5 font-sans">
+                        <button onclick="triggerPrint()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2.5 rounded-lg transition shadow-md flex items-center justify-center gap-1.5 font-sans font-bold">
                             <i class="fa-solid fa-print"></i> PDF 다운로드 / 인쇄
                         </button>
                     </div>
@@ -522,7 +512,7 @@
                         <div class="w-1/2 text-left">
                             과목명: <span id="paper-subject-display" class="font-bold">영어 (English)</span>
                         </div>
-                        <div class="w-1/2 text-right flex justify-end items-center">
+                        <div class="w-1/2 text-right flex justify-end items-center font-sans">
                             성명: <span class="border-b border-slate-400 w-36 inline-block ml-1">&nbsp;</span>
                         </div>
                     </div>
@@ -534,11 +524,11 @@
                     <!-- Section 1 Rendering (Vocabulary) -->
                     <div class="avoid-break">
                         <h3 class="font-bold text-xs bg-slate-100 px-2 py-1 border-l-4 border-slate-800 mb-3 flex justify-between items-center font-sans">
-                            <div class="flex flex-col">
+                            <div class="flex flex-col font-sans">
                                 <span id="paper-vocab-title-display" class="font-bold">[I] Vocabulary Evaluation (1 - 20)</span>
-                                <span id="paper-vocab-score-display" class="text-[9px] font-normal text-slate-500">각 5.0점 [총 100점]</span>
+                                <span id="paper-vocab-score-display" class="text-[9px] font-normal text-slate-500 font-sans">각 5.0점 [총 100점]</span>
                             </div>
-                            <div class="flex items-center gap-1 text-rose-600 font-bold border border-rose-300 px-1.5 py-0.5 rounded bg-rose-50/50 text-[10px]">
+                            <div class="flex items-center gap-1 text-rose-600 font-bold border border-rose-300 px-1.5 py-0.5 rounded bg-rose-50/50 text-[10px] font-sans">
                                 <span>득점:</span>
                                 <span class="border-b border-rose-400 w-7 inline-block text-center">&nbsp;</span>
                                 <span>/ 100</span>
@@ -562,9 +552,9 @@
                     <!-- Section 2 Reading Comprehension (Stacked Layout) -->
                     <div>
                         <h3 class="font-bold text-xs bg-slate-100 px-2 py-1 border-l-4 border-slate-800 mb-3 flex justify-between items-center font-sans">
-                            <div class="flex flex-col">
+                            <div class="flex flex-col font-sans">
                                 <span id="paper-reading-title-display" class="font-bold">[II] Reading Comprehension</span>
-                                <span id="paper-reading-score-display" class="text-[9px] font-normal text-slate-500">지문별 독해 문항 배점 [총 100점]</span>
+                                <span id="paper-reading-score-display" class="text-[9px] font-normal text-slate-500 font-sans">지문별 독해 문항 배점 [총 100점]</span>
                             </div>
                             <div class="flex items-center gap-1 text-rose-600 font-bold border border-rose-300 px-1.5 py-0.5 rounded bg-rose-50/50 text-[10px] font-sans">
                                 <span>득점:</span>
@@ -585,7 +575,7 @@
                     <!-- Section 3 Rendering (Translation) -->
                     <div>
                         <h3 class="font-bold text-xs bg-slate-100 px-2 py-1 border-l-4 border-slate-800 mb-3 flex justify-between items-center font-sans">
-                            <div class="flex flex-col">
+                            <div class="flex flex-col font-sans">
                                 <span id="paper-translation-title-display" class="font-bold">[III] Sentence Translation</span>
                                 <span id="paper-translation-score-display" class="text-[9px] font-normal text-slate-500 font-sans">각 10점 [총 100점]</span>
                             </div>
@@ -608,11 +598,11 @@
                     <!-- Section 4 Rendering (Sentence Unscramble) -->
                     <div>
                         <h3 class="font-bold text-xs bg-slate-100 px-2 py-1 border-l-4 border-slate-800 mb-3 flex justify-between items-center font-sans">
-                            <div class="flex flex-col">
+                            <div class="flex flex-col font-sans">
                                 <span id="paper-unscramble-title-display" class="font-bold">[IV] Sentence Unscrambling Practice</span>
-                                <span id="paper-unscramble-score-display" class="text-[9px] font-normal text-slate-500 font-sans">각 10점 [총 100점]</span>
+                                <span id="paper-unscramble-score-display" class="text-[9px] font-normal text-slate-500 font-sans font-semibold">각 10점 [총 100점]</span>
                             </div>
-                            <div class="flex items-center gap-1 text-rose-600 font-bold border border-rose-300 px-1.5 py-0.5 rounded bg-rose-50/50 text-[10px] font-sans">
+                            <div class="flex items-center gap-1 text-rose-600 font-bold border border-rose-300 px-1.5 py-0.5 rounded bg-rose-50/50 text-[10px] font-sans font-bold">
                                 <span>득점:</span>
                                 <span class="border-b border-rose-400 w-7 inline-block text-center">&nbsp;</span>
                                 <span>/ 100</span>
@@ -639,15 +629,15 @@
     </main>
 
     <!-- Custom Modal Dialogs -->
-    <div id="custom-modal" class="no-print fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+    <div id="custom-modal" class="no-print fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center hidden opacity-0 transition-opacity duration-300 font-sans">
         <div class="bg-white rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl transform scale-95 transition-transform duration-300 space-y-4">
             <div class="flex items-center gap-3 border-b pb-3" id="modal-header-container">
-                <i id="modal-icon" class="fa-solid fa-circle-info text-2xl text-indigo-600 font-sans"></i>
-                <h3 id="modal-title" class="text-md font-extrabold text-slate-950 font-sans">알림</h3>
+                <i id="modal-icon" class="fa-solid fa-circle-info text-2xl text-indigo-600"></i>
+                <h3 id="modal-title" class="text-md font-extrabold text-slate-950">알림</h3>
             </div>
-            <p id="modal-message" class="text-xs text-slate-600 leading-relaxed font-sans"></p>
+            <p id="modal-message" class="text-xs text-slate-600 leading-relaxed"></p>
             <div class="flex justify-end gap-2" id="modal-actions">
-                <button onclick="closeModal()" class="bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs px-4 py-2 rounded-lg transition font-sans">확인</button>
+                <button onclick="closeModal()" class="bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs px-4 py-2 rounded-lg transition">확인</button>
             </div>
         </div>
     </div>
@@ -674,89 +664,7 @@
         var examData = null;
         var apiKey = localStorage.getItem('monthly_exam_api_key') || '';
 
-        // Visual Emojis mapping dictionary for matching test
-        const emojiDictionary = {
-            "apple": "🍎", "사과": "🍎",
-            "banana": "🍌", "바나나": "🍌",
-            "cat": "🐱", "고양이": "🐱",
-            "dog": "🐶", "개": "🐶", "강아지": "🐶",
-            "sun": "☀️", "태양": "☀️", "해": "☀️",
-            "tree": "🌳", "나무": "🌳",
-            "car": "🚗", "자동차": "🚗", "차": "🚗",
-            "book": "📖", "책": "📖",
-            "milk": "🥛", "우유": "🥛",
-            "fish": "🐟", "물고기": "🐟",
-            "bird": "🐦", "새": "🐦",
-            "ball": "⚽", "공": "⚽",
-            "cake": "🍰", "케이크": "🍰",
-            "hat": "🎩", "모자": "🎩",
-            "star": "⭐", "별": "⭐",
-            "flower": "🌸", "꽃": "🌸",
-            "pencil": "✏️", "연필": "✏️",
-            "chair": "🪑", "의자": "🪑",
-            "cup": "🥛", "컵": "🥛",
-            "clock": "⏰", "시계": "⏰",
-            "cloud": "☁️", "구름": "☁️",
-            "house": "🏠", "집": "🏠",
-            "school": "🏫", "학교": "🏫",
-            "bus": "🚌", "버스": "🚌",
-            "lion": "🦁", "사자": "🦁",
-            "bear": "🐻", "곰": "🐻",
-            "rabbit": "🐰", "토끼": "🐰",
-            "water": "💧", "물": "💧",
-            "desk": "🪑", "책상": "🪑",
-            "doctor": "🧑‍⚕️", "의사": "🧑‍⚕️",
-            "teacher": "🧑‍🏫", "선생님": "🧑‍🏫",
-            "happy": "😊", "행복한": "😊",
-            "winter": "❄️", "겨울": "❄️",
-            "summer": "☀️", "여름": "☀️",
-            "garden": "🏡", "정원": "🏡",
-            "friend": "🧑‍🤝‍🧑", "친구": "🧑‍🤝‍🧑",
-            "family": "👨‍👩‍👧‍👦", "가족": "👨‍👩‍👧‍👦",
-            "swim": "🏊", "수영하다": "🏊",
-            "animal": "🦁", "동물": "🦁",
-            "morning": "🌅", "아침": "🌅",
-            "yellow": "💛", "노란색": "💛",
-            "library": "📚", "도서관": "📚",
-            "holiday": "🎈", "공휴일": "🎈", "휴가": "🎈",
-            "fruit": "🍎", "과일": "🍎",
-            "kitchen": "🍳", "부엌": "🍳",
-            "concert": "🎵", "음악회": "🎵", "콘서트": "🎵",
-            "weather": "🌈", "날씨": "🌈",
-            "umbrella": "☔", "우산": "☔",
-            "running": "🏃", "달리기": "🏃",
-            "bridge": "🌉", "다리": "🌉",
-            "dinner": "🍽️", "저녁식사": "🍽️",
-            "picture": "🖼️", "사진": "🖼️", "그림": "그림",
-            "market": "🛒", "시장": "시장"
-        };
-
-        // Fallback or dynamic emoji detection helper
-        function getEmojiForWord(word, mean) {
-            const w = (word || "").toLowerCase().trim();
-            const m = (mean || "").toLowerCase().trim();
-            
-            if (emojiDictionary[w]) return emojiDictionary[w];
-            if (emojiDictionary[m]) return emojiDictionary[m];
-            
-            for (let key in emojiDictionary) {
-                if (w.includes(key) || m.includes(key)) {
-                    return emojiDictionary[key];
-                }
-            }
-            const defaults = ["⭐", "✏️", "🎈", "🌟", "🍀", "🎨"];
-            const hash = w.length + m.length;
-            return defaults[hash % defaults.length];
-        }
-
-        // Helper to get Korean level text name
-        function getLevelName() {
-            if (currentLevel === 'elementary_junior') return "초등 저학년(2~4학년)";
-            if (currentLevel === 'elementary') return "초등 고학년(5~6학년)";
-            return "중등부";
-        }
-
-        // Multi-level Demo Dataset Model (Junior, Elementary & Middle)
+        // Multi-level Demo Dataset Model (Fully completed for ALL levels!)
         const defaultExamData = {
             elementary_junior: {
                 vocab: [
@@ -820,7 +728,7 @@
                         passage: "My family went to the zoo last Saturday. We saw many cool animals! 🦁 There was a big lion sleeping under the shade. A playful rabbit was eating green grass. My favorite animal was the tall giraffe. It has a very long neck to eat leaves from the top of the tree.",
                         questions: [
                             { q: "동물원에서 사자가 하고 있었던 행동으로 알맞은 것은?", type: "mcq", questionCategory: "내용일치", choices: ["초록색 풀을 뜯어먹고 있었다.", "나무 밑 그늘에서 잠을 자고 있었다.", "친구들과 축구를 하고 있었다.", "긴 목으로 나무 위 나뭇잎을 먹고 있었다.", "사육사에게 인사를 하고 있었다."], answer: 2, answerText: "", shuffledWords: [] },
-                            { q: "글쓴이가 동물원에서 가장 좋아한 동물은 무엇이며, 그 이유는 무엇인가요?", type: "descriptive", questionCategory: "서술", choices: [], answer: null, answerText: "기린(giraffe)이며, 목이 아주 길어 나무 최고대의 잎을 먹을 수 있기 때문이다.",
+                            { q: "글쓴이가 동물원에서 가장 좋아한 동물은 무엇이며, 그 이유는 무엇인가요?", type: "descriptive", questionCategory: "서술", choices: [], answer: null, answerText: "기린(giraffe)이며, 그 목이 아주 길어 나무 최고대의 잎을 먹을 수 있기 때문이다.",
                             shuffledWords: [] },
                             { q: "다음 단어를 알맞게 조합하여 기린의 특성에 관한 문장을 완성하세요.", type: "unscramble", questionCategory: "배열", choices: [], answer: null, answerText: "It has a very long neck", shuffledWords: ["very", "neck", "has", "long", "a", "It"] }
                         ]
@@ -865,7 +773,17 @@
                     { word: "garden", mean: "정원" },
                     { word: "summer", mean: "여름" },
                     { word: "friend", mean: "친구" },
-                    { word: "family", mean: "가족" }
+                    { word: "family", mean: "가족" },
+                    { word: "library", mean: "도서관" },
+                    { word: "kitchen", mean: "부엌" },
+                    { word: "umbrella", mean: "우산" },
+                    { word: "running", mean: "달리기" },
+                    { word: "weather", mean: "날씨" },
+                    { word: "subject", mean: "과목" },
+                    { word: "homework", mean: "숙제" },
+                    { word: "concert", mean: "콘서트" },
+                    { word: "picture", mean: "그림" },
+                    { word: "holiday", mean: "휴일" }
                 ],
                 reading: [
                     {
@@ -877,8 +795,21 @@
                         ]
                     }
                 ],
-                translation: [],
-                unscramble: []
+                translation: [
+                    { eng: "My family enjoys hiking in the mountain on sunny weekends.", kor: "우리 가족은 화창한 주말에 산으로 등산하는 것을 즐긴다." },
+                    { eng: "We must clean our classroom together after the lessons end.", kor: "우리는 수업이 끝난 후에 함께 교실을 청소해야 한다." },
+                    { eng: "She borrowed two interesting science books from the library.", kor: "그녀는 도서관에서 흥미로운 과학책 두 권을 빌렸다." },
+                    { eng: "Swimming is a great exercise to stay strong and healthy.", kor: "수영은 몸을 튼튼하고 건강하게 유지하기 위한 좋은 운동이다." },
+                    { eng: "He wants to build a cool tree house in the backyard.", kor: "그는 뒷마당에 멋진 나무 집을 짓고 싶어 한다." },
+                    { eng: "The yellow school bus stops in front of my house every morning.", kor: "노란색 학교 버스는 매일 아침 우리 집 앞에 멈춰 선다." }
+                ],
+                unscramble: [
+                    { eng: "They are practicing a beautiful song for the concert.", kor: "그들은 콘서트를 위해 아름다운 노래를 연습하고 있다." },
+                    { eng: "He forgot to bring his math homework to school.", kor: "그는 학교에 수학 숙제를 가져오는 것을 깜빡했다." },
+                    { eng: "My mother cooked delicious spaghetti for lunch today.", kor: "우리 어머니는 오늘 점심으로 맛있는 스파게티를 만들어 주셨다." },
+                    { eng: "We should help each other when someone is in trouble.", kor: "누군가가 어려움에 처했을 때 우리는 서로 도와야 한다." },
+                    { eng: "She is drawing a picture of her cute family.", kor: "그녀는 그녀의 귀여운 가족 그림을 그리고 있는 중이다." }
+                ]
             },
             middle: {
                 vocab: [
@@ -891,7 +822,17 @@
                     { word: "hypothesis", mean: "가설" },
                     { word: "maintain", mean: "유지하다" },
                     { word: "objective", mean: "목표" },
-                    { word: "perspective", mean: "관점" }
+                    { word: "perspective", mean: "관점" },
+                    { word: "sustainable", mean: "지속가능한" },
+                    { word: "collaborate", mean: "협력하다" },
+                    { word: "efficient", mean: "효율적인" },
+                    { word: "modify", mean: "수정하다" },
+                    { word: "resource", mean: "자원" },
+                    { word: "conflict", mean: "갈등" },
+                    { word: "establish", mean: "수립하다" },
+                    { word: "acquire", mean: "취득하다" },
+                    { word: "sufficient", mean: "충분한" },
+                    { word: "vulnerable", mean: "취약한" }
                 ],
                 reading: [
                     {
@@ -903,41 +844,23 @@
                         ]
                     }
                 ],
-                translation: [],
-                unscramble: []
+                translation: [
+                    { eng: "The primary purpose of scientific research is to discover truths about nature.", kor: "과학적 연구의 주요 목적은 자연에 대한 진실을 발견하는 것이다." },
+                    { eng: "We must adopt sustainable practices to prevent global warming from getting worse.", kor: "우리는 지구 온난화가 악화되는 것을 막기 위해 지속 가능한 습관들을 채택해야 한다." },
+                    { eng: "Despite facing various technological difficulties, the team achieved great success.", kor: "다양한 기술적 장벽들에 직면했음에도 불구하고, 그 팀은 대단한 성공을 거두었다." },
+                    { eng: "Organizations should establish clear safety guidelines for all employees in factories.", kor: "기업들은 공장의 모든 근로자들을 위한 명확한 안전 가이드라인을 수립해야 한다." },
+                    { eng: "He spent years analyzing the significant consequences of industrial development.", kor: "그는 산업 발전이 초래한 중대한 결과들을 분석하는 데 여러 해를 보냈다." }
+                ],
+                unscramble: [
+                    { eng: "The government decided to allocate more resources to public healthcare services.", kor: "정부는 공공 의료 서비스에 더 많은 재원 자원을 배분하기로 결정했다." },
+                    { eng: "An effective solution to this critical conflict requires active listening skills.", kor: "이 심각한 갈등에 대한 효과적인 해결책은 적극적인 경청 기술을 필요로 한다." },
+                    { eng: "She has been working hard to acquire sufficient materials for her research.", kor: "그녀는 그녀의 연구를 위해 충분한 재료 자료를 확보하고자 열심히 일해왔다." },
+                    { eng: "Under no circumstances should we ignore the environmental warnings.", kor: "어떤 상황 아래에서도 우리는 환경적인 경고들을 무시해서는 안 된다." },
+                    { eng: "The more we collaborate with others, the better perspective we can establish.", kor: "우리가 다른 이들과 더 많이 협력할수록, 우리는 더 나은 관점을 수립할 수 있다." }
+                ]
             }
         };
 
-        // WINDOW ONLOAD CORE ENGINE STARTUP
-        window.onload = function() {
-            currentLevel = localStorage.getItem('monthly_exam_level') || 'elementary_junior';
-            vocabCount = parseInt(localStorage.getItem('monthly_exam_vocab_count')) || 20;
-            vocabType = localStorage.getItem('monthly_exam_vocab_type') || 'matching';
-            readingCount = parseInt(localStorage.getItem('monthly_exam_reading_count')) || 5;
-            translationCount = parseInt(localStorage.getItem('monthly_exam_translation_count')) || 10;
-            unscrambleCount = parseInt(localStorage.getItem('monthly_exam_unscramble_count')) || 10;
-            
-            isPaperTeacherMode = false;
-
-            const savedData = localStorage.getItem('monthly_exam_v3_data');
-            if (savedData) {
-                try {
-                    examData = JSON.parse(savedData);
-                } catch (e) {
-                    examData = JSON.parse(JSON.stringify(defaultExamData[currentLevel]));
-                }
-            } else {
-                examData = JSON.parse(JSON.stringify(defaultExamData[currentLevel]));
-            }
-
-            syncCountControls();
-            updateSidebarLevelButtons();
-            initializeEditorInputs();
-            syncHeaderData();
-            renderPaperPreview();
-        };
-
-        // Sync inputs and sliders values
         function syncCountControls() {
             document.getElementById('config-level').value = currentLevel;
             
@@ -1003,7 +926,7 @@
                     const isDescriptive = q.type === 'descriptive';
                     
                     questionsFormHTML += `
-                        <div class="space-y-2 p-3 bg-slate-900/50 rounded-lg border border-slate-850">
+                        <div class="space-y-2 p-3 bg-slate-900/50 rounded-lg border border-slate-850 font-sans">
                             <div class="flex flex-wrap items-center justify-between gap-2">
                                 <span class="font-bold text-indigo-400">질문 ${qIdx+1} (${pIdx*3 + vocabCount + 1 + qIdx}번)</span>
                                 
@@ -1016,7 +939,7 @@
                                     </select>
                                     
                                     <span class="text-slate-500 font-semibold ml-1">평가유형:</span>
-                                    <select id="edit-qcat-${pIdx}-${qIdx}" onchange="changeQuestionCategory(${pIdx}, ${qIdx}, this.value)" class="bg-slate-800 border border-slate-700 rounded px-1 py-0.5 text-white font-sans">
+                                    <select id="edit-qcat-${pIdx}-${qIdx}" onchange="changeQuestionCategory(${pIdx}, ${qIdx}, this.value)" class="bg-slate-800 border border-slate-700 rounded px-1 py-0.5 text-white">
                                         <option value="제목" ${q.questionCategory === '제목' ? 'selected' : ''}>제목</option>
                                         <option value="요지" ${q.questionCategory === '요지' ? 'selected' : ''}>요지</option>
                                         <option value="내용일치" ${q.questionCategory === '내용일치' ? 'selected' : ''}>내용일치</option>
@@ -1032,17 +955,17 @@
                             <input type="text" id="edit-qtext-${pIdx}-${qIdx}" value="${q.q || ''}" class="w-full bg-slate-900 border border-slate-800 rounded px-2.5 py-1.5 text-slate-100 font-medium" placeholder="질문 내용을 기입하세요.">
                             
                             <!-- MCQ Options (Only Visible if MCQ) -->
-                            <div id="edit-mcq-box-${pIdx}-${qIdx}" class="${isMCQ ? '' : 'hidden'} space-y-1.5 pl-3 border-l-2 border-indigo-950">
+                            <div id="edit-mcq-box-${pIdx}-${qIdx}" class="${isMCQ ? '' : 'hidden'} space-y-1.5 pl-3 border-l-2 border-indigo-950 font-sans">
                                 <div class="grid grid-cols-1 md:grid-cols-5 gap-1.5 text-[10px]">
                                     ${[0, 1, 2, 3, 4].map(cIdx => `
                                         <div>
-                                            <span class="text-slate-500">선택지 ${cIdx+1}</span>
+                                            <span class="text-slate-500 font-sans">선택지 ${cIdx+1}</span>
                                             <input type="text" id="edit-qchoice-${pIdx}-${qIdx}-${cIdx}" value="${q.choices && q.choices[cIdx] ? q.choices[cIdx] : ''}" class="w-full bg-slate-900 border border-slate-800 rounded px-1.5 py-1 text-slate-200">
                                         </div>
                                     `).join('')}
                                 </div>
                                 <div class="flex items-center gap-2 text-[11px] pt-1">
-                                    <span class="text-slate-400 font-semibold">정답 번호 (1-5):</span>
+                                    <span class="text-slate-400 font-semibold font-sans">정답 번호 (1-5):</span>
                                     <input type="number" id="edit-qans-${pIdx}-${qIdx}" min="1" max="5" value="${q.answer || 1}" class="w-12 bg-slate-900 border border-slate-800 rounded px-1.5 py-0.5 text-center font-bold text-rose-500">
                                 </div>
                             </div>
@@ -1050,8 +973,8 @@
                             <!-- Descriptive / Unscramble Answers -->
                             <div id="edit-text-box-${pIdx}-${qIdx}" class="${!isMCQ ? '' : 'hidden'} space-y-1.5 pl-3 border-l-2 border-amber-950 font-sans">
                                 <div>
-                                    <span class="text-slate-500 block text-[10px] mb-0.5">교사용 모범 정답 텍스트</span>
-                                    <input type="text" id="edit-qans-text-${pIdx}-${qIdx}" value="${q.answerText || ''}" class="w-full bg-slate-900 border border-slate-800 rounded px-2 py-1 text-rose-400 font-bold" placeholder="학생용 시험지에는 가려지며, 교사용 정답지에 빨간색으로 출력됩니다.">
+                                    <span class="text-slate-500 block text-[10px] mb-0.5">교사용 정답 문장/텍스트</span>
+                                    <input type="text" id="edit-qans-text-${pIdx}-${qIdx}" value="${q.answerText || ''}" class="w-full bg-slate-900 border border-slate-800 rounded px-2 py-1 text-rose-400 font-bold" placeholder="학생용 시험지에는 가려지며, 정답지에 출력됩니다.">
                                 </div>
                                 <div class="${isUnscramble ? '' : 'hidden'}" id="edit-unscramble-chips-box-${pIdx}-${qIdx}">
                                     <span class="text-slate-500 block text-[10px] mb-0.5">흐트러뜨릴 단어들 (쉼표로 구분하여 입력 시 이 카드가 섞여서 출제됩니다)</span>
@@ -1063,16 +986,16 @@
                 });
 
                 pBox.innerHTML = `
-                    <div class="flex flex-col md:flex-row md:items-center justify-between text-amber-400 font-bold border-b border-slate-800 pb-1.5 gap-2">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between text-amber-400 font-bold border-b border-slate-800 pb-1.5 gap-2 font-sans">
                         <span>[지문 ${pIdx+1}] 독해 본문 및 문제 편집</span>
                         <div class="flex items-center gap-1.5">
-                            <button onclick="generateAIQuestionsForPassage(${pIdx})" class="bg-indigo-650 hover:bg-indigo-600 text-white text-[10px] font-bold px-2.5 py-1 rounded transition flex items-center gap-1.5 shadow-sm font-sans">
+                            <button onclick="generateAIQuestionsForPassage(${pIdx})" class="bg-indigo-650 hover:bg-indigo-600 border border-indigo-500/50 text-white text-[10px] font-bold px-2.5 py-1 rounded transition flex items-center gap-1.5 shadow-sm font-sans">
                                 <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i> 이 지문으로 AI 문제 출제 (3문항)
                             </button>
                         </div>
                     </div>
                     <div>
-                        <label class="block text-slate-400 mb-1">지문 본문 (영어)</label>
+                        <label class="block text-slate-400 mb-1 font-sans">지문 본문 (영어)</label>
                         <textarea id="edit-passage-${pIdx}" oninput="syncSinglePassageText(${pIdx}, this.value)" rows="4" class="w-full bg-slate-900 border border-slate-800 rounded p-2 text-slate-200 font-serif font-light leading-relaxed focus:outline-none">${pass.passage}</textarea>
                     </div>
                     <div class="space-y-3 pt-1">
@@ -1083,25 +1006,23 @@
             }
 
             // Section 3 (Translation)
-            const displayTrans = examData.translation.slice(0, translationCount);
+            const displayTrans = examData.translation;
             const transText = displayTrans.map(x => `${x.eng}=${x.kor}`).join('\n');
             document.getElementById('edit-translation').value = transText;
 
             // Section 4 (Unscramble)
-            const displayUnscramble = examData.unscramble.slice(0, unscrambleCount);
+            const displayUnscramble = examData.unscramble;
             const unscrambleText = displayUnscramble.map(x => `${x.eng}=${x.kor}`).join('\n');
             document.getElementById('edit-unscramble').value = unscrambleText;
         }
 
-        // Real-time 동기화를 지원하는 신규 서브루틴 추가 (지문을 바꿀 때 AI가 즉시 변경된 지문을 활용하도록 로직 정합성 수립)
         function syncSinglePassageText(pIdx, val) {
             if (examData && examData.reading && examData.reading[pIdx]) {
                 examData.reading[pIdx].passage = val.trim();
-                renderPaperPreview(); // 미리보기에도 실시간 반영
+                renderPaperPreview(); // 실시간 미리보기 연동
             }
         }
 
-        // Handle Type selection switch in Editor dynamically
         function changeQuestionType(pIdx, qIdx, type) {
             const mcqBox = document.getElementById(`edit-mcq-box-${pIdx}-${qIdx}`);
             const textBox = document.getElementById(`edit-text-box-${pIdx}-${qIdx}`);
@@ -1121,7 +1042,6 @@
                 chipsBox.classList.add('hidden');
             }
             
-            // Sync current configuration status to examData
             if (examData.reading[pIdx] && examData.reading[pIdx].questions[qIdx]) {
                 examData.reading[pIdx].questions[qIdx].type = type;
             }
@@ -1133,133 +1053,12 @@
             }
         }
 
-        // Bulk Editor Switch Tab logic
-        function switchEditorTab(tab) {
-            const tabs = ['vocab', 'reading', 'translation', 'unscramble'];
-            tabs.forEach(t => {
-                document.getElementById(`tab-${t}`).className = "px-3 py-1.5 text-xs font-semibold text-slate-400 hover:text-white rounded-t-md font-sans";
-                document.getElementById(`panel-${t}`).classList.add('hidden');
-            });
-
-            document.getElementById(`tab-${tab}`).className = "px-3 py-1.5 text-xs font-semibold text-white border-b-2 border-indigo-500 bg-slate-800 rounded-t-md font-sans";
-            document.getElementById(`panel-${tab}`).classList.remove('hidden');
+        function saveApiKey(val) {
+            apiKey = val.trim();
+            localStorage.setItem('monthly_exam_api_key', apiKey);
+            showToast("Gemini API Key가 보관되었습니다.");
         }
 
-        // Smart Excel Paste Detection Handler
-        function handleVocabEngPaste(e) {
-            const clipboardData = e.clipboardData || window.clipboardData;
-            if (!clipboardData) return;
-            const pastedText = clipboardData.getData('Text');
-            
-            if (pastedText.includes('\t')) {
-                e.preventDefault();
-                const lines = pastedText.split(/\r?\n/);
-                const engs = [];
-                const kors = [];
-                
-                lines.forEach(line => {
-                    if (line.trim() === '') return;
-                    const parts = line.split('\t');
-                    if (parts.length >= 2) {
-                        engs.push(parts[0].trim());
-                        kors.push(parts[1].trim());
-                    } else if (parts.length === 1) {
-                        engs.push(parts[0].trim());
-                        kors.push("");
-                    }
-                });
-                
-                if (engs.length > 0 || kors.length > 0) {
-                    document.getElementById('edit-vocab-eng').value = engs.join('\n');
-                    document.getElementById('edit-vocab-kor').value = kors.join('\n');
-                    showToast("⚡ 엑셀 표 구조를 감지하여 영어와 뜻을 각각 자동 입력했습니다!");
-                }
-            }
-        }
-
-        // Apply Vocab input modifications
-        function applyVocabChange() {
-            const engLines = document.getElementById('edit-vocab-eng').value.split('\n');
-            const korLines = document.getElementById('edit-vocab-kor').value.split('\n');
-            
-            const maxLen = Math.max(engLines.length, korLines.length);
-            const arr = [];
-            for (let i = 0; i < maxLen; i++) {
-                const eng = engLines[i] !== undefined ? engLines[i].trim() : "";
-                const kor = korLines[i] !== undefined ? korLines[i].trim() : "";
-                if (eng || kor) {
-                    arr.push({ word: eng, mean: kor });
-                }
-            }
-            examData.vocab = arr;
-            syncDataUpdates();
-        }
-
-        function applyReadingChange() {
-            const updatedReading = [];
-            for (let p = 0; p < readingCount; p++) {
-                const passageEl = document.getElementById(`edit-passage-${p}`);
-                if (!passageEl) continue;
-                const passageText = passageEl.value.trim();
-                const questions = [];
-                for (let q = 0; q < 3; q++) {
-                    const qType = document.getElementById(`edit-qtype-${p}-${q}`).value;
-                    const qCat = document.getElementById(`edit-qcat-${p}-${q}`).value;
-                    const qText = document.getElementById(`edit-qtext-${p}-${q}`).value.trim();
-                    const choices = [];
-                    for (let c = 0; c < 5; c++) {
-                        const choiceEl = document.getElementById(`edit-qchoice-${p}-${q}-${c}`);
-                        choices.push(choiceEl ? choiceEl.value.trim() : "");
-                    }
-                    const answer = parseInt(document.getElementById(`edit-qans-${p}-${q}`).value) || 1;
-                    const answerText = document.getElementById(`edit-qans-text-${p}-${q}`).value.trim();
-                    
-                    const rawChips = document.getElementById(`edit-qunscramble-chips-${p}-${q}`).value.trim();
-                    const shuffledWords = rawChips ? rawChips.split(',').map(x => x.trim()) : [];
-
-                    questions.push({ 
-                        q: qText, 
-                        type: qType, 
-                        questionCategory: qCat, 
-                        choices, 
-                        answer, 
-                        answerText, 
-                        shuffledWords 
-                    });
-                }
-                updatedReading.push({ passage: passageText, questions });
-            }
-            examData.reading = updatedReading;
-            syncDataUpdates();
-        }
-
-        function applyTranslationChange() {
-            const lines = document.getElementById('edit-translation').value.trim().split('\n');
-            const arr = [];
-            lines.forEach(line => {
-                const parts = line.split('=');
-                if(parts.length >= 2) {
-                    arr.push({ eng: parts[0].trim(), kor: parts[1].trim() });
-                }
-            });
-            examData.translation = arr;
-            syncDataUpdates();
-        }
-
-        function applyUnscrambleChange() {
-            const lines = document.getElementById('edit-unscramble').value.trim().split('\n');
-            const arr = [];
-            lines.forEach(line => {
-                const parts = line.split('=');
-                if(parts.length >= 2) {
-                    arr.push({ eng: parts[0].trim(), kor: parts[1].trim() });
-                }
-            });
-            examData.unscramble = arr;
-            syncDataUpdates();
-        }
-
-        // 수동 편집, 브라우저 캐시 및 AI 응답 데이터를 정밀 정제하는 검수 가드
         function sanitizeReadingQuestions(questions) {
             if (!Array.isArray(questions)) return [];
             return questions.map(q => {
@@ -1267,18 +1066,14 @@
                 if (Array.isArray(q.choices)) {
                     choices = q.choices;
                 } else if (typeof q.choices === 'string') {
-                    // 기호(<, >, |)가 혼입된 오염 보기를 안전 분할
                     let cleanStr = q.choices.replace(/^[<\[\s\-|]+|[>\]\s\-|]+$/g, '');
                     choices = cleanStr.split(/[|]/).map(s => s.trim());
                 }
                 
-                // 보기 누락 자동 방어 및 정확히 5개 채우기
                 while (choices.length < 5) {
                     choices.push("________________");
                 }
                 choices = choices.slice(0, 5);
-
-                // 원형 괄호 기호 및 <, > 노출 제거 클리닝 작업
                 choices = choices.map(choice => {
                     if (typeof choice === 'string') {
                         return choice.replace(/^[<\[\s]+|[>\]\s]+$/g, '').trim();
@@ -1286,7 +1081,6 @@
                     return String(choice);
                 });
 
-                // 어순 배열의 경우 셔플 단어 카드 자동 생성
                 let shuffledWords = Array.isArray(q.shuffledWords) ? q.shuffledWords : [];
                 if (q.type === 'unscramble' && shuffledWords.length === 0 && q.answerText) {
                     shuffledWords = q.answerText.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "").split(/\s+/).sort(() => Math.random() - 0.5);
@@ -1304,7 +1098,6 @@
             });
         }
 
-        // RENDER PRINTABLE PAPER PREVIEW
         function renderPaperPreview() {
             if (!examData) return;
 
@@ -1332,7 +1125,7 @@
                 vGrid.classList.add('hidden');
                 vMatchingContainer.classList.remove('hidden');
                 if (instructionEl) {
-                    instructionEl.innerHTML = `<i class="fa-solid fa-star text-amber-500 mr-1.5"></i>※ [선 잇기] 다음 그림에 해당하는 올바른 영어 단어까지 예쁜 선을 그어 연결하세요.`;
+                    instructionEl.innerHTML = `<i class="fa-solid fa-star text-amber-500 mr-1.5 font-sans"></i>※ [선 잇기] 다음 그림에 해당하는 올바른 영어 단어까지 예쁜 선을 그어 연결하세요.`;
                 }
                 renderMatchingVocab(vMatchingContainer, activeVocab);
             } else {
@@ -1341,11 +1134,11 @@
                 
                 if (instructionEl) {
                     if (vocabType === 'mean') {
-                        instructionEl.innerHTML = `<i class="fa-solid fa-pencil text-slate-700 mr-1.5"></i>※ 다음 영어 단어의 알맞은 뜻을 기입란에 서술하시오.`;
+                        instructionEl.innerHTML = `<i class="fa-solid fa-pencil text-slate-700 mr-1.5 font-sans"></i>※ 다음 영어 단어의 알맞은 뜻을 기입란에 서술하시오.`;
                     } else if (vocabType === 'eng') {
-                        instructionEl.innerHTML = `<i class="fa-solid fa-pencil text-slate-700 mr-1.5"></i>※ 다음 한글 뜻을 보고 알맞은 영어 단어 스펠링을 기입란에 서술하시오.`;
+                        instructionEl.innerHTML = `<i class="fa-solid fa-pencil text-slate-700 mr-1.5 font-sans"></i>※ 다음 한글 뜻을 보고 알맞은 영어 단어 스펠링을 기입란에 서술하시오.`;
                     } else {
-                        instructionEl.innerHTML = `<i class="fa-solid fa-pencil text-slate-700 mr-1.5"></i>※ 다음 제시어의 알맞은 의미(뜻 또는 영어 스펠링)를 기입란에 서술하시오.`;
+                        instructionEl.innerHTML = `<i class="fa-solid fa-pencil text-slate-700 mr-1.5 font-sans"></i>※ 다음 제시어의 알맞은 의미(뜻 또는 영어 스펠링)를 기입란에 서술하시오.`;
                     }
                 }
 
@@ -1373,7 +1166,7 @@
                             ? `<span class="teacher-answer pt-1.5 text-center border-t border-dashed border-slate-300 text-[11px]">${item.mean}</span>`
                             : `<span class="writing-line"></span>`;
                     } else {
-                        textGiven = `<span class="text-slate-900 font-bold flex items-center gap-1.5">
+                        textGiven = `<span class="text-slate-900 font-bold flex items-center gap-1.5 font-sans">
                             <span class="text-[10px] text-slate-400 bg-slate-200 px-1 py-0.5 rounded-full font-sans">${idx + 1}</span>
                             ${item.mean}
                         </span>`;
@@ -1443,29 +1236,26 @@
                         `).join(' ');
 
                         const answerBox = isPaperTeacherMode
-                            ? `<div class="teacher-answer bg-rose-50/50 p-2.5 border-l-2 border-rose-500 rounded text-[12px] mt-1.5">정답: ${q.answerText || '미작성'}</div>`
+                            ? `<div class="teacher-answer bg-rose-50/50 p-2.5 border-l-2 border-rose-500 rounded text-[12px] mt-1.5 font-sans">정답: ${q.answerText || '미작성'}</div>`
                             : `<div class="writing-line"></div>`;
 
                         questionContentHTML = `
                             <div class="mt-2 space-y-2">
-                                <div class="flex flex-wrap gap-1 py-1.5 bg-slate-50 px-2.5 rounded border border-dashed border-slate-300">
+                                <div class="flex flex-wrap gap-1 py-1.5 bg-slate-50 px-2.5 rounded border border-dashed border-slate-300 font-sans">
                                     ${chipsHTML || '<span class="text-slate-400">단어가 존재하지 않습니다.</span>'}
                                 </div>
                                 ${answerBox}
                             </div>
                         `;
                     } else {
-                        // Standard MCQ - Fixed choices rendering layout (Avoiding the '< | >' tag issue)
                         let choicesHTML = '';
                         const choices = q.choices || [];
                         choices.forEach((choice, cIdx) => {
                             const isCoreAnswer = (q.answer === (cIdx + 1));
-                            const styleClass = (isPaperTeacherMode && isCoreAnswer) ? 'class="teacher-answer bg-rose-50 px-2 rounded border border-rose-200 font-bold"' : '';
+                            const styleClass = (isPaperTeacherMode && isCoreAnswer) ? 'class="teacher-answer bg-rose-50 px-2 rounded border border-rose-200 font-bold font-sans"' : '';
                             const numSymbol = ['①', '②', '③', '④', '⑤'][cIdx] || `${cIdx+1}.`;
                             choicesHTML += `<li ${styleClass}>${numSymbol} ${choice}</li>`;
                         });
-
-                        const correctMarker = isPaperTeacherMode ? `<span class="teacher-answer text-[12px] ml-1">[정답: ${q.answer}]</span>` : '';
 
                         questionContentHTML = `
                             <ul class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-[11.5px] text-slate-700 mt-1.5 pl-1 font-sans">
@@ -1475,8 +1265,8 @@
                     }
 
                     questionsHTML += `
-                        <div class="mt-4 first:mt-0 pb-3 border-b border-slate-100 last:border-none last:pb-0">
-                            <p class="font-bold text-slate-900 text-[12.5px]">${overallQNum}. ${q.q || '질문이 없습니다.'} ${catBadge}</p>
+                        <div class="mt-4 first:mt-0 pb-3 border-b border-slate-100 last:border-none last:pb-0 font-sans">
+                            <p class="font-bold text-slate-900 text-[12.5px] font-sans">${overallQNum}. ${q.q || '질문이 없습니다.'} ${catBadge}</p>
                             ${questionContentHTML}
                         </div>
                     `;
@@ -1484,12 +1274,11 @@
 
                 const juniorHeadingDeco = currentLevel === 'elementary_junior' ? '✨ ' : '';
 
-                // NEW STACKED PASSAGE & QUESTIONS LAYOUT: Passage on TOP, Questions BELOW
                 passBlock.innerHTML = `
                     <div class="space-y-4">
                         <!-- Passage (Top) -->
                         <div class="bg-slate-50 p-4 border border-slate-200 rounded-lg text-[12px] font-serif leading-relaxed italic text-slate-800 relative">
-                            <span class="font-bold text-indigo-900 not-italic block mb-2 text-xs font-sans"><i class="fa-solid fa-book-open text-indigo-600 mr-1"></i> [${juniorHeadingDeco}지문 ${pIdx+1}]</span>
+                            <span class="font-bold text-indigo-900 not-italic block mb-2 text-xs font-sans"><i class="fa-solid fa-book-open text-indigo-600 mr-1 font-sans"></i> [${juniorHeadingDeco}지문 ${pIdx+1}]</span>
                             ${pass.passage}
                         </div>
                         <!-- Questions (Bottom) -->
@@ -1517,11 +1306,11 @@
                 row.className = "avoid-break p-2.5 border border-slate-100 rounded-xl bg-slate-50/10 space-y-2";
                 
                 const answerBox = isPaperTeacherMode
-                    ? `<div class="teacher-answer bg-rose-50/50 p-2 border-l-2 border-rose-500 rounded text-[11.5px]">${item.kor}</div>`
+                    ? `<div class="teacher-answer bg-rose-50/50 p-2 border-l-2 border-rose-500 rounded text-[11.5px] font-sans">정답: ${item.kor}</div>`
                     : `<div class="writing-line"></div>`;
 
                 row.innerHTML = `
-                    <div class="font-bold text-slate-800 flex items-center gap-1.5">
+                    <div class="font-bold text-slate-800 flex items-center gap-1.5 font-sans">
                         <span class="text-[10px] bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded-full font-sans">${idx + vocabCount + (readingCount * 3) + 1}</span>
                         <span>${item.eng}</span>
                     </div>
@@ -1543,21 +1332,21 @@
 
             activeUnscramble.forEach((item, idx) => {
                 const row = document.createElement('div');
-                row.className = "avoid-break p-2.5 border border-slate-100 rounded-xl bg-slate-50/10 space-y-2";
+                row.className = "avoid-break p-2.5 border border-slate-100 rounded-xl bg-slate-50/10 space-y-2 font-serif";
                 
                 const originalWords = item.eng.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "").split(/\s+/);
-                const shuffled = [...originalWords].sort((a, b) => a.length - b.length || a.localeCompare(b));
+                const scrambled = [...originalWords].sort((a, b) => a.length - b.length || a.localeCompare(b));
 
-                const chipsHTML = shuffled.map(word => `
+                const chipsHTML = scrambled.map(word => `
                     <span class="border border-slate-300 bg-slate-50 px-2 py-0.5 rounded-md text-[10px] font-sans font-medium text-slate-700">${word}</span>
                 `).join(' ');
 
                 const answerBox = isPaperTeacherMode
-                    ? `<div class="teacher-answer bg-rose-50/50 p-2 border-l-2 border-rose-500 rounded text-[11.5px]">${item.eng}</div>`
-                    : `<div class="writing-line"></div>`;
+                    ? `<div class="teacher-answer bg-rose-50/50 p-2 border-l-2 border-rose-500 rounded text-[11.5px] font-sans font-bold">정답: ${item.eng}</div>`
+                    : `<div class="writing-line font-sans"></div>`;
 
                 row.innerHTML = `
-                    <div class="font-bold text-slate-800 flex items-center gap-1.5">
+                    <div class="font-bold text-slate-800 flex items-center gap-1.5 font-sans">
                         <span class="text-[10px] bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded-full font-sans">${idx + vocabCount + (readingCount * 3) + translationCount + 1}</span>
                         <span>[힌트: ${item.kor}]</span>
                     </div>
@@ -1570,7 +1359,6 @@
             });
         }
 
-        // Dedicated rendering engine for visual Picture-Word line matching
         function renderMatchingVocab(container, activeVocab) {
             container.innerHTML = '';
 
@@ -1604,11 +1392,11 @@
                     const emoji = getEmojiForWord(lItem.word, lItem.mean);
 
                     leftColsHTML += `
-                        <div class="h-11 flex items-center justify-between bg-white border border-slate-200 px-3.5 rounded-xl shadow-sm w-[42%] relative">
+                        <div class="h-11 flex items-center justify-between bg-white border border-slate-200 px-3.5 rounded-xl shadow-sm w-[42%] relative font-sans">
                             <span class="font-bold text-xs text-slate-400 font-sans">${num}</span>
-                            <div class="flex items-center gap-2">
+                            <div class="flex items-center gap-2 font-sans">
                                 <span class="text-lg">${emoji}</span>
-                                <span class="text-[11px] font-bold text-slate-700 truncate max-w-[80px]">${lItem.mean}</span>
+                                <span class="text-[11px] font-bold text-slate-700 truncate max-w-[80px] font-sans">${lItem.mean}</span>
                             </div>
                             <div class="w-2 h-2 rounded-full bg-slate-400 absolute right-[-4px] top-4.5" style="transform:translateY(1.5px);"></div>
                         </div>
@@ -1617,7 +1405,7 @@
                     rightColsHTML += `
                         <div class="h-11 flex items-center justify-start bg-white border border-slate-200 px-3.5 rounded-xl shadow-sm w-[42%] relative font-sans">
                             <div class="w-2 h-2 rounded-full bg-slate-400 absolute left-[-4px] top-4.5" style="transform:translateY(1.5px);"></div>
-                            <span class="text-[11px] font-bold text-slate-800 ml-2 uppercase tracking-wide truncate max-w-[120px]">${rItem.word}</span>
+                            <span class="text-[11px] font-bold text-slate-800 ml-2 uppercase tracking-wide truncate max-w-[120px] font-sans">${rItem.word}</span>
                         </div>
                     `;
                 }
@@ -1628,7 +1416,7 @@
                             ${svgLinesHTML}
                         </svg>
                     </div>
-                    <div class="flex justify-between items-center h-72 relative">
+                    <div class="flex justify-between items-center h-72 relative font-sans">
                         <div class="flex flex-col justify-between h-full w-full">
                             ${leftColsHTML.split('</div>').map((card, idx) => {
                                 if (idx === chunkSize) return '';
@@ -1648,7 +1436,7 @@
             }
         }
 
-        // Paper Preview View Controller toggles (Student version vs Teacher version)
+        // Paper Preview View Controller toggles
         function togglePaperAnswerView(isTeacher) {
             isPaperTeacherMode = isTeacher;
             const btnStudent = document.getElementById('paper-btn-student');
@@ -1664,7 +1452,6 @@
             renderPaperPreview();
         }
 
-        // Toggle page breaks for high quality printing output
         function togglePageBreak(elementId) {
             const el = document.getElementById(elementId);
             const btn = document.getElementById(`btn-${elementId}`);
@@ -1679,7 +1466,7 @@
             } else {
                 el.className = "print-page-break border-t border-dashed border-amber-400 my-4 relative";
                 el.innerHTML = `<span class="page-break-indicator absolute -top-2.5 left-2 bg-amber-400 text-slate-950 px-1.5 py-0.5 rounded text-[8px] font-bold font-sans">인쇄 시 이 지점에서 다음 페이지로 분절됨</span>`;
-                btn.className = "w-full text-left bg-rose-50 hover:bg-rose-100 p-2 rounded border border-rose-200 text-[10px] font-bold text-rose-700 flex justify-between items-center transition font-sans";
+                btn.className = "w-full text-left bg-rose-50 hover:bg-rose-100 p-2 rounded border border-rose-200 text-[10px] font-bold text-rose-700 flex justify-between items-center transition font-sans font-bold";
                 btn.querySelector('i').className = "fa-solid fa-trash-can text-rose-500";
                 showToast("인쇄 시 강제 줄 바꿈 처리선이 설정되었습니다.");
             }
@@ -1689,7 +1476,7 @@
             window.print();
         }
 
-        // Clean and extract valid JSON structures even if AI output contains markdown block wrappers
+        // Unified parser tool
         function parseJsonSafely(rawString) {
             if (!rawString) return null;
             let clean = rawString.trim();
@@ -1699,25 +1486,140 @@
             return JSON.parse(clean.trim());
         }
 
-        // -------------------------------------------------------------------------
-        // GEMINI AI INTEGRATED QUESTION GENERATORS (ROBUST STRUCTURAL SHEETS ENGINE)
-        // -------------------------------------------------------------------------
+        // 1. Unified Global Generator
+        async function generateAllExamWithAI() {
+            const overlay = document.getElementById('ai-loading-overlay');
+            const stepText = document.getElementById('ai-loading-step');
+            overlay.classList.remove('hidden');
+            stepText.innerText = `[${getLevelName()}] 전과목 명품 모의고사 출제 구상 중...`;
 
-        // 1. AI Vocab Generator
+            const prompt = `영어 월말평가 완벽한 문항 세트 동적 생성 요청:
+            대상 레벨: ${getLevelName()}
+            요구사항:
+            1. vocab: 정확히 ${vocabCount}개의 영어 단어와 한글 뜻 리스트.
+            2. reading: 정확히 ${readingCount}개의 독해 본문과 각 지문당 객관식/서술형/배열형 문제 3개(총 ${readingCount * 3}문제). 질문 및 보기는 한국어로 출제.
+            3. translation: 정확히 ${translationCount}개의 영한해석 구문 (eng: 영어 원문, kor: 매끄러운 해석).
+            4. unscramble: 정확히 ${unscrambleCount}개의 어순배열 구문 (eng: 영어 원문, kor: 한국어 힌트).
+            
+            반드시 지정된 JSON 구조로 완벽한 수준의 문장을 반환해야 합니다.`;
+
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }],
+                systemInstruction: { parts: [{ text: "너는 영미 수능/내신 및 학원 기출 평가지를 설계하는 일류 영어 교수진이야. 오타가 없고 난이도 밸런스가 최고인 신규 데이터를 오직 JSON 구조로만 정밀하게 리턴해줘." }] },
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "OBJECT",
+                        properties: {
+                            vocab: {
+                                type: "ARRAY",
+                                items: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        word: { type: "STRING" },
+                                        mean: { type: "STRING" }
+                                    },
+                                    required: ["word", "mean"]
+                                }
+                            },
+                            reading: {
+                                type: "ARRAY",
+                                items: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        passage: { type: "STRING" },
+                                        questions: {
+                                            type: "ARRAY",
+                                            items: {
+                                                type: "OBJECT",
+                                                properties: {
+                                                    q: { type: "STRING" },
+                                                    type: { type: "STRING", enum: ["mcq", "descriptive", "unscramble"] },
+                                                    questionCategory: { type: "STRING", enum: ["제목", "요지", "내용일치", "내용불일치", "추론", "대명사지칭", "서술", "배열"] },
+                                                    choices: { type: "ARRAY", items: { type: "STRING" } },
+                                                    answer: { type: "INTEGER" },
+                                                    answerText: { type: "STRING" },
+                                                    shuffledWords: { type: "ARRAY", items: { type: "STRING" } }
+                                                },
+                                                required: ["q", "type", "questionCategory", "choices", "answer", "answerText", "shuffledWords"]
+                                            }
+                                        }
+                                    },
+                                    required: ["passage", "questions"]
+                                }
+                            },
+                            translation: {
+                                type: "ARRAY",
+                                items: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        eng: { type: "STRING" },
+                                        kor: { type: "STRING" }
+                                    },
+                                    required: ["eng", "kor"]
+                                }
+                            },
+                            unscramble: {
+                                type: "ARRAY",
+                                items: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        eng: { type: "STRING" },
+                                        kor: { type: "STRING" }
+                                    },
+                                    required: ["eng", "kor"]
+                                }
+                            }
+                        },
+                        required: ["vocab", "reading", "translation", "unscramble"]
+                    }
+                }
+            };
+
+            const result = await makeGeminiCallWithRetry(payload, stepText, "시험지 통합 조립 완료! 데이터 갱신 중...");
+            overlay.classList.add('hidden');
+
+            if (result) {
+                try {
+                    const parsed = parseJsonSafely(result);
+                    if (parsed && parsed.vocab && parsed.reading && parsed.translation && parsed.unscramble) {
+                        parsed.reading = parsed.reading.map(item => ({
+                            passage: item.passage,
+                            questions: sanitizeReadingQuestions(item.questions)
+                        }));
+
+                        examData = parsed;
+                        localStorage.setItem('monthly_exam_v3_data', JSON.stringify(examData));
+                        initializeEditorInputs();
+                        syncHeaderData();
+                        renderPaperPreview();
+                        showToast("🪄 구글 Gemini AI가 전과목 통합 문항 출제를 완벽히 완료했습니다!");
+                    } else {
+                        throw new Error("Invalid Output JSON Object");
+                    }
+                } catch (e) {
+                    console.error(e);
+                    openModal("출제 처리 실패", "AI가 생성한 데이터를 포맷팅하지 못했습니다. 다시 시도해 주세요.");
+                }
+            } else {
+                openModal("통신 실패", "AI 문제 생성기 호출에 실패했습니다. API Key 확인 및 인터넷 상태를 점검해 주세요.");
+            }
+        }
+
+        // 2. Vocab Generator
         async function generateAIVocab() {
             const overlay = document.getElementById('ai-loading-overlay');
             const stepText = document.getElementById('ai-loading-step');
             overlay.classList.remove('hidden');
-            stepText.innerText = `[${getLevelName()}] 수준의 어휘 및 한국어 뜻 생성 중...`;
+            stepText.innerText = `[${getLevelName()}] 어휘 데이터 새로 창작 중...`;
 
-            const prompt = `영어 어휘 평가용 단어 세트 생성 요청:
-            대상 레벨: ${getLevelName()}
-            필요 단어 수: ${vocabCount}개
-            조건: 해당 대상 학생들에게 적합한 필수/핵심 단어로 영어(word)와 한국어 뜻(mean)을 생성하세요. 무작위로 다양하게 생성해야 합니다.`;
+            const prompt = `영어 단어장 자동 생성 의뢰:
+            학년 수준: ${getLevelName()}
+            필요 어휘 개수: ${vocabCount}개`;
 
             const payload = {
                 contents: [{ parts: [{ text: prompt }] }],
-                systemInstruction: { parts: [{ text: "너는 수준별 최적의 영단어 사전을 설계하는 어휘 전문가야. 중복되지 않고 난이도에 알맞은 참신한 단어와 정확한 뜻을 JSON 객체 형식으로 생성해줘." }] },
+                systemInstruction: { parts: [{ text: "너는 수준별 최적의 영단어 사전을 만드는 어휘 전문가야. 중복되지 않고 참신한 영어 단어(word)와 한국어 뜻(mean) 리스트를 JSON 형태로 반환해줘." }] },
                 generationConfig: {
                     responseMimeType: "application/json",
                     responseSchema: {
@@ -1740,7 +1642,7 @@
                 }
             };
 
-            const result = await makeGeminiCallWithRetry(payload, stepText, "단어 목록 정제 중...");
+            const result = await makeGeminiCallWithRetry(payload, stepText, "단어 리스트 정제 완료!");
             overlay.classList.add('hidden');
 
             if (result) {
@@ -1748,36 +1650,32 @@
                     const parsed = parseJsonSafely(result);
                     if (parsed && parsed.vocab) {
                         examData.vocab = parsed.vocab;
+                        localStorage.setItem('monthly_exam_v3_data', JSON.stringify(examData));
                         initializeEditorInputs();
                         syncHeaderData();
                         renderPaperPreview();
-                        showToast(`🪄 ${vocabCount}개의 AI 추천 단어가 새롭게 생성되었습니다.`);
-                    } else {
-                        throw new Error("Invalid Output format");
+                        showToast(`🪄 AI 어휘장 ${vocabCount}개가 새로 생성되었습니다.`);
                     }
-                } catch (e) {
-                    openModal("단어 생성 오류", "AI 단어장 파싱에 실패했습니다. 다시 시도해 주세요.");
+                } catch(e) {
+                    openModal("단어 파싱 오류", "데이터 구조 해석에 실패했습니다. 다시 생성해 주세요.");
                 }
-            } else {
-                openModal("AI 통신 실패", "AI 문제 생성기 호출에 실패했습니다. API Key를 확인하시거나 네트워크 상태를 점검한 후 다시 시도해 주세요.");
             }
         }
 
-        // 2. AI Translation Generator
+        // 3. Translation Generator
         async function generateAITranslation() {
             const overlay = document.getElementById('ai-loading-overlay');
             const stepText = document.getElementById('ai-loading-step');
             overlay.classList.remove('hidden');
-            stepText.innerText = `[${getLevelName()}] 수준의 번역용 문장 및 한글 해석 생성 중...`;
+            stepText.innerText = `[${getLevelName()}] 영한 번역 예문 및 매끄러운 한글 뜻 생성 중...`;
 
-            const prompt = `영한해석 평가용 문장 세트 생성 요청:
-            대상 레벨: ${getLevelName()}
-            필요 문장 수: ${translationCount}개
-            조건: 학습 수준에 맞고 유용한 구문/표현이 포함된 완성도 높은 새로운 영어 문장(eng)과 자연스러운 한국어 해석 번역(kor)을 만드세요.`;
+            const prompt = `영한번역 지문 생성 의뢰:
+            학년 수준: ${getLevelName()}
+            필요 문장 수: ${translationCount}개`;
 
             const payload = {
                 contents: [{ parts: [{ text: prompt }] }],
-                systemInstruction: { parts: [{ text: "너는 영한 번역 평가용 고급 예문을 설계하는 구문 전문가야. 어법상 오류가 없고 어휘 수준에 최적화된 새로운 영어 문장과 매끄러운 한글 번역 세트를 JSON 객체 형식으로 생성해줘." }] },
+                systemInstruction: { parts: [{ text: "너는 수준별 완벽한 영어 예문을 구상하는 어법 전문가야. 영문(eng)과 자연스러운 해석 한글(kor)을 JSON 객체 형식으로 생성해줘." }] },
                 generationConfig: {
                     responseMimeType: "application/json",
                     responseSchema: {
@@ -1800,7 +1698,7 @@
                 }
             };
 
-            const result = await makeGeminiCallWithRetry(payload, stepText, "해석 문장 다듬는 중...");
+            const result = await makeGeminiCallWithRetry(payload, stepText, "해석 문장 조립 완료!");
             overlay.classList.add('hidden');
 
             if (result) {
@@ -1808,36 +1706,32 @@
                     const parsed = parseJsonSafely(result);
                     if (parsed && parsed.translation) {
                         examData.translation = parsed.translation;
+                        localStorage.setItem('monthly_exam_v3_data', JSON.stringify(examData));
                         initializeEditorInputs();
                         syncHeaderData();
                         renderPaperPreview();
-                        showToast(`🪄 ${translationCount}개의 AI 추천 해석 문장들이 새롭게 생성되었습니다.`);
-                    } else {
-                        throw new Error("Invalid Output format");
+                        showToast(`🪄 AI 영한해석 예문 ${translationCount}개가 새로 생성되었습니다.`);
                     }
-                } catch (e) {
-                    openModal("해석 생성 오류", "AI 해석 예문 파싱에 실패했습니다. 다시 시도해 주세요.");
+                } catch(e) {
+                    openModal("해석 파싱 오류", "데이터 가공 중 에러가 발생했습니다.");
                 }
-            } else {
-                openModal("AI 통신 실패", "AI 문제 생성기 호출에 실패했습니다. API Key를 확인하시거나 네트워크 상태를 점검한 후 다시 시도해 주세요.");
             }
         }
 
-        // 3. AI Unscramble Generator
+        // 4. Unscramble Generator
         async function generateAIUnscramble() {
             const overlay = document.getElementById('ai-loading-overlay');
             const stepText = document.getElementById('ai-loading-step');
             overlay.classList.remove('hidden');
-            stepText.innerText = `[${getLevelName()}] 수준의 영작/어순배열용 영어 문장 및 한국어 힌트 생성 중...`;
+            stepText.innerText = `[${getLevelName()}] 어순배열용 구문 및 한글 힌트 생성 중...`;
 
-            const prompt = `어순배열 평가용 문장 세트 생성 요청:
-            대상 레벨: ${getLevelName()}
-            필요 문장 수: ${unscrambleCount}개
-            조건: 핵심 문법 요소가 담긴 새로운 영어 문장(eng)과 문장을 유추할 수 있는 명료한 한글 뜻 힌트(kor)를 만드세요.`;
+            const prompt = `어순배열 구문 생성 의뢰:
+            학년 수준: ${getLevelName()}
+            필요 문장 수: ${unscrambleCount}개`;
 
             const payload = {
                 contents: [{ parts: [{ text: prompt }] }],
-                systemInstruction: { parts: [{ text: "너는 영어 서술형 어순배열 평가 예문을 설계하는 서술형 영작 전문가야. 영작 조건에 맞고 난이도에 최적화된 새로운 영어 원형 문장과 명료한 한글 힌트 세트를 JSON 객체 형식으로 생성해줘." }] },
+                systemInstruction: { parts: [{ text: "너는 영작 평가에 핵심이 되는 중요 영어 구문과 한글 뜻을 설계하는 작가야. 영어완성문장(eng)과 한글 힌트 뜻(kor)을 JSON으로 생성해줘." }] },
                 generationConfig: {
                     responseMimeType: "application/json",
                     responseSchema: {
@@ -1860,7 +1754,7 @@
                 }
             };
 
-            const result = await makeGeminiCallWithRetry(payload, stepText, "배열 문장 정렬 중...");
+            const result = await makeGeminiCallWithRetry(payload, stepText, "배열 구문 조립 완료!");
             overlay.classList.add('hidden');
 
             if (result) {
@@ -1868,22 +1762,19 @@
                     const parsed = parseJsonSafely(result);
                     if (parsed && parsed.unscramble) {
                         examData.unscramble = parsed.unscramble;
+                        localStorage.setItem('monthly_exam_v3_data', JSON.stringify(examData));
                         initializeEditorInputs();
                         syncHeaderData();
                         renderPaperPreview();
-                        showToast(`🪄 ${unscrambleCount}개의 AI 추천 영작/배열 문장들이 새롭게 생성되었습니다.`);
-                    } else {
-                        throw new Error("Invalid Output format");
+                        showToast(`🪄 AI 어순배열 문제 ${unscrambleCount}개가 새로 생성되었습니다.`);
                     }
-                } catch (e) {
-                    openModal("배열 생성 오류", "AI 배열 문항 파싱에 실패했습니다. 다시 시도해 주세요.");
+                } catch(e) {
+                    openModal("배열 파싱 오류", "데이터 가공 중 에러가 발생했습니다.");
                 }
-            } else {
-                openModal("AI 통신 실패", "AI 문제 생성기 호출에 실패했습니다. API Key를 확인하시거나 네트워크 상태를 점검한 후 다시 시도해 주세요.");
             }
         }
 
-        // 4. AI Reading Passage + Questions Generator (지문 자체를 AI가 통째로 새로 만드는 기능)
+        // 5. Reading Passage + Questions Generator (지문 자체를 AI가 통째로 새로 만드는 기능)
         async function generateAIReadingPassages() {
             const overlay = document.getElementById('ai-loading-overlay');
             const stepText = document.getElementById('ai-loading-step');
@@ -1918,16 +1809,10 @@
                                                     q: { type: "STRING" },
                                                     type: { type: "STRING", enum: ["mcq", "descriptive", "unscramble"] },
                                                     questionCategory: { type: "STRING", enum: ["제목", "요지", "내용일치", "내용불일치", "추론", "대명사지칭", "서술", "배열"] },
-                                                    choices: {
-                                                        type: "ARRAY",
-                                                        items: { type: "STRING" }
-                                                    },
+                                                    choices: { type: "ARRAY", items: { type: "STRING" } },
                                                     answer: { type: "INTEGER" },
                                                     answerText: { type: "STRING" },
-                                                    shuffledWords: {
-                                                        type: "ARRAY",
-                                                        items: { type: "STRING" }
-                                                    }
+                                                    shuffledWords: { type: "ARRAY", items: { type: "STRING" } }
                                                 },
                                                 required: ["q", "type", "questionCategory", "choices", "answer", "answerText", "shuffledWords"]
                                             }
@@ -1954,6 +1839,7 @@
                             questions: sanitizeReadingQuestions(item.questions)
                         }));
                         examData.reading = sanitizedReading;
+                        localStorage.setItem('monthly_exam_v3_data', JSON.stringify(examData));
                         initializeEditorInputs();
                         syncHeaderData();
                         renderPaperPreview();
@@ -1969,7 +1855,7 @@
             }
         }
 
-        // 5. Generate questions for a SINGLE PASSAGE based on its index
+        // 6. Generate questions for a SINGLE PASSAGE based on its index
         async function generateAIQuestionsForPassage(pIdx) {
             const passageEl = document.getElementById(`edit-passage-${pIdx}`);
             if (!passageEl) return;
@@ -2012,16 +1898,10 @@
                                 q: { type: "STRING" },
                                 type: { type: "STRING", enum: ["mcq", "descriptive", "unscramble"] },
                                 questionCategory: { type: "STRING", enum: ["제목", "요지", "내용일치", "내용불일치", "추론", "대명사지칭", "서술", "배열"] },
-                                choices: {
-                                    type: "ARRAY",
-                                    items: { type: "STRING" }
-                                },
+                                choices: { type: "ARRAY", items: { type: "STRING" } },
                                 answer: { type: "INTEGER" },
                                 answerText: { type: "STRING" },
-                                shuffledWords: {
-                                    type: "ARRAY",
-                                    items: { type: "STRING" }
-                                }
+                                shuffledWords: { type: "ARRAY", items: { type: "STRING" } }
                             },
                             required: ["q", "type", "questionCategory", "choices", "answer", "answerText", "shuffledWords"]
                         }
@@ -2041,6 +1921,7 @@
                             passage: passageText,
                             questions: sanitized.slice(0, 3)
                         };
+                        localStorage.setItem('monthly_exam_v3_data', JSON.stringify(examData));
                         initializeEditorInputs();
                         syncHeaderData();
                         renderPaperPreview();
@@ -2057,7 +1938,7 @@
             }
         }
 
-        // 6. Generate questions for ALL PASSAGES simultaneously (기존 수동 입력 지문 연동형 일괄 생성)
+        // 7. Generate questions for ALL PASSAGES simultaneously (기존 수동 입력 지문 연동형 일괄 생성)
         async function generateAIQuestionsAllPassages() {
             // Read and validate all textareas
             const passages = [];
@@ -2111,16 +1992,10 @@ ${passages.map(p => `지문 ID [${p.id}]: "${p.text}"`).join('\n\n')}
                                                     q: { type: "STRING" },
                                                     type: { type: "STRING", enum: ["mcq", "descriptive", "unscramble"] },
                                                     questionCategory: { type: "STRING", enum: ["제목", "요지", "내용일치", "내용불일치", "추론", "대명사지칭", "서술", "배열"] },
-                                                    choices: {
-                                                        type: "ARRAY",
-                                                        items: { type: "STRING" }
-                                                    },
+                                                    choices: { type: "ARRAY", items: { type: "STRING" } },
                                                     answer: { type: "INTEGER" },
                                                     answerText: { type: "STRING" },
-                                                    shuffledWords: {
-                                                        type: "ARRAY",
-                                                        items: { type: "STRING" }
-                                                    }
+                                                    shuffledWords: { type: "ARRAY", items: { type: "STRING" } }
                                                 },
                                                 required: ["q", "type", "questionCategory", "choices", "answer", "answerText", "shuffledWords"]
                                             }
@@ -2149,6 +2024,7 @@ ${passages.map(p => `지문 ID [${p.id}]: "${p.text}"`).join('\n\n')}
                                 examData.reading[pId].questions = sanitized;
                             }
                         });
+                        localStorage.setItem('monthly_exam_v3_data', JSON.stringify(examData));
                         initializeEditorInputs();
                         syncHeaderData();
                         renderPaperPreview();
@@ -2179,21 +2055,15 @@ ${passages.map(p => `지문 ID [${p.id}]: "${p.text}"`).join('\n\n')}
 
             while (attempt < maxRetries && !success) {
                 try {
-                    let response;
-                    if (cleanedCustomKey) {
-                        response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${cleanedCustomKey}`, {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify(payload)
-                        });
-                    } else {
-                        // Literal apiKey empty string - guaranteed platform proxy interception
-                        response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify(payload)
-                        });
-                    }
+                    const requestUrl = cleanedCustomKey 
+                        ? `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${cleanedCustomKey}`
+                        : `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+
+                    const response = await fetch(requestUrl, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(payload)
+                    });
                     
                     if (!response.ok) throw new Error("API Request Failed");
                     
