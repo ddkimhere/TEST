@@ -7,44 +7,43 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        body { font-family: 'Noto Sans KR', sans-serif; }
-        .paper-preview { background-color: white; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); color: #111827; }
-        .writing-line { border-bottom: 1px dotted #6b7280; height: 2.2rem; margin-top: 0.5rem; }
-        .teacher-answer { color: #dc2626 !important; font-weight: bold; }
-        @media print { .no-print { display: none !important; } .paper-preview { box-shadow: none !important; border: none !important; } }
+        .paper-preview { background-color: white; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); }
+        .writing-line { border-bottom: 1px dotted #6b7280; height: 2.5rem; margin-top: 0.5rem; }
+        @media print { .no-print { display: none !important; } .paper-preview { box-shadow: none !important; } }
     </style>
 </head>
 <body class="bg-slate-100 min-h-screen">
 
-    <!-- 시스템 상단바 -->
+    <!-- 상단바 -->
     <header class="no-print bg-slate-900 text-white p-4 flex justify-between items-center shadow-lg sticky top-0 z-50">
         <h1 class="font-bold">YMS 월말평가 AI 시스템</h1>
         <div class="flex gap-2">
-            <button onclick="generateAll()" class="bg-indigo-600 px-3 py-1 rounded text-sm font-bold">🪄 전체 생성</button>
-            <button onclick="triggerPrint()" class="bg-emerald-600 px-3 py-1 rounded text-sm font-bold">인쇄하기</button>
+            <button onclick="toggleEditor()" class="bg-blue-600 px-3 py-1 rounded text-sm font-bold">편집기 토글</button>
+            <button onclick="generateAI()" class="bg-indigo-600 px-3 py-1 rounded text-sm font-bold">🪄 전체 AI 생성</button>
+            <button onclick="window.print()" class="bg-emerald-600 px-3 py-1 rounded text-sm font-bold">인쇄하기</button>
         </div>
     </header>
 
-    <main class="flex flex-col lg:flex-row gap-6 p-6">
-        <!-- 편집기 -->
-        <div class="w-full lg:w-[400px] bg-white p-6 rounded-xl shadow-lg no-print">
+    <main class="flex h-[calc(100vh-64px)] overflow-hidden">
+        <!-- 편집기 (고정) -->
+        <div id="editor-panel" class="w-[400px] bg-white p-6 shadow-xl border-r overflow-y-auto no-print">
             <h2 class="text-lg font-bold mb-4">선생님 문제 편집기</h2>
             <div class="space-y-4">
                 <div>
-                    <label class="block font-bold mb-1">지문 입력</label>
-                    <textarea id="edit-reading" rows="10" class="w-full p-2 border rounded" oninput="render()"></textarea>
+                    <label class="block font-bold text-sm mb-1">지문 입력</label>
+                    <textarea id="edit-reading" rows="12" class="w-full p-2 border rounded text-sm" oninput="render()"></textarea>
                     <button onclick="generateAI()" class="mt-2 w-full bg-purple-600 text-white p-2 rounded font-bold">🪄 이 지문으로 문제 생성</button>
                 </div>
                 <div>
-                    <label class="block font-bold mb-1">단어 목록</label>
-                    <textarea id="edit-vocab" rows="5" class="w-full p-2 border rounded" oninput="render()"></textarea>
+                    <label class="block font-bold text-sm mb-1">단어 목록</label>
+                    <textarea id="edit-vocab" rows="6" class="w-full p-2 border rounded text-sm" oninput="render()"></textarea>
                 </div>
             </div>
         </div>
 
-        <!-- 미리보기 -->
-        <div class="flex-1">
-            <div id="paper" class="paper-preview p-12 min-h-[297mm]">
+        <!-- 미리보기 영역 -->
+        <div class="flex-1 overflow-y-auto p-6 bg-slate-200">
+            <div id="paper" class="paper-preview p-16 mx-auto min-h-[297mm] max-w-[210mm]">
                 <h1 class="text-2xl font-bold mb-6 text-center border-b-2 pb-4">월간 평가 시험지</h1>
                 <div id="paper-body" class="space-y-8"></div>
             </div>
@@ -52,46 +51,51 @@
     </main>
 
     <script>
+        // 기본 데이터
         let data = { 
             vocab: "Apple:사과\nBanana:바나나", 
-            reading: "본문: People often need help. That is why each community has helpers. Firefighters work hard to put out fires. \n질문: 위 글의 요지는 무엇입니까?" 
+            reading: "본문: Firefighters work hard to put out fires. They use ladders and hoses.\n질문: 위 글의 Firefighter의 역할은 무엇인가요?" 
         };
 
+        // 편집기 토글
+        function toggleEditor() {
+            document.getElementById('editor-panel').classList.toggle('hidden');
+        }
+
+        // 실시간 렌더링
         function render() {
             data.vocab = document.getElementById('edit-vocab').value;
             data.reading = document.getElementById('edit-reading').value;
             
             const body = document.getElementById('paper-body');
-            // 수직 배치(Stacked) 레이아웃 적용
-            const readingParts = data.reading.split('\n질문:');
-            const passage = readingParts[0].replace('본문:', '');
-            const question = readingParts[1] || '질문 없음';
+            const lines = data.reading.split('\n');
+            const passage = lines.filter(l => l.startsWith('본문:')).map(l => l.replace('본문:', '')).join('<br>');
+            const question = lines.filter(l => l.startsWith('질문:')).map(l => l.replace('질문:', '')).join('<br>');
 
             body.innerHTML = `
                 <div>
-                    <h2 class="font-bold border-b mb-4 pb-2">I. 단어 영역</h2>
-                    <pre class="whitespace-pre-wrap">${data.vocab}</pre>
+                    <h2 class="font-bold border-b mb-4 pb-2 text-xl">I. 단어 영역</h2>
+                    <pre class="whitespace-pre-wrap font-sans">${data.vocab}</pre>
                 </div>
                 <div>
-                    <h2 class="font-bold border-b mb-4 pb-2">II. 독해 영역</h2>
-                    <div class="bg-slate-50 p-4 border rounded mb-4 font-serif">${passage}</div>
-                    <div class="font-bold text-lg mb-2">Q. ${question}</div>
+                    <h2 class="font-bold border-b mb-4 pb-2 text-xl">II. 독해 영역</h2>
+                    <div class="bg-slate-50 p-6 border rounded mb-6 font-serif leading-relaxed">${passage}</div>
+                    <div class="font-bold text-lg mb-4">Q. ${question}</div>
+                    <div class="writing-line"></div>
                     <div class="writing-line"></div>
                 </div>
             `;
         }
 
+        // AI 생성 함수 (실제 연결용)
         async function generateAI() {
-            alert("AI가 분석 중입니다...");
-            // 실제 API 통신 로직 연결
-            document.getElementById('edit-reading').value += "\n\n(AI 생성 질문: 위 글의 Firefighter의 역할은 무엇인가요?)";
+            alert("AI가 새로운 문제를 생성 중입니다...");
+            // 실제 API 연결 시 여기 코드를 작성합니다.
+            document.getElementById('edit-reading').value += "\n질문: (AI 생성문제) 이 지문이 주는 교훈은?";
             render();
         }
 
-        function generateAll() { alert("전체 문제를 생성합니다."); }
-        function triggerPrint() { window.print(); }
-
-        // 초기화
+        // 초기 로드
         document.getElementById('edit-vocab').value = data.vocab;
         document.getElementById('edit-reading').value = data.reading;
         render();
