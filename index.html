@@ -134,7 +134,7 @@
                     <span>Gemini AI 시험지 마법 발동 중</span>
                 </h3>
                 <p id="ai-loading-step" class="text-xs text-indigo-300 font-semibold animate-pulse">선택된 수준의 고품질 문제를 출제하는 중...</p>
-                <p class="text-[10px] text-slate-500 leading-relaxed">구글의 초거대 AI가 실시간으로 가장 최적화된 명품 독해 지문과 고품질 검증 평가 문항 데이터를 결합하여 마스터 템플릿에 빌드 중입니다.</p>
+                <p class="text-[10px] text-slate-500 leading-relaxed">구글의 초거대 AI가 실시간으로 가장 최적화된 명품 독해 지문과 고품질 평가 문항 데이터를 결합하여 빌드 중입니다.</p>
             </div>
         </div>
     </div>
@@ -421,30 +421,13 @@
             <!-- Realistic Printable A4 Sheet Render Frame -->
             <div id="print-sheet" class="paper-preview w-full max-w-[210mm] min-h-[297mm] p-8 md:p-12 relative bg-white transition-all duration-300">
                 
-                <!-- RE-DESIGNED SOPHISTICATED PRINT HEADER (NO LOGO IMAGE) -->
+                <!-- [RE-DESIGNED] SOPHISTICATED PRINT HEADER (NO LOGO IMAGE, NO SCOREBOARD TABLE) -->
                 <div class="relative pb-4 mb-8 border-b-2 border-slate-900">
                     <div class="absolute top-0 left-0 w-full h-[3px] bg-slate-900"></div>
-                    <div class="flex justify-between items-start pt-3">
-                        <div>
-                            <span class="text-sm font-black tracking-tight text-slate-900 block font-sans">YMS ASSESSMENT</span>
-                            <span id="paper-academy-display" class="font-bold text-[11px] text-slate-600 tracking-wider">YMS 어학원</span>
-                        </div>
-                        
-                        <!-- 스코어보드/결재란 메타 테이블 -->
-                        <div class="w-48 text-[10px] border border-slate-900 grid grid-cols-3 text-center divide-x divide-slate-900">
-                            <div class="divide-y divide-slate-900">
-                                <div class="bg-slate-50 py-1 font-bold text-slate-700">과목명</div>
-                                <div id="paper-subject-display" class="py-2 font-semibold truncate px-1">영어</div>
-                            </div>
-                            <div class="divide-y divide-slate-900">
-                                <div class="bg-slate-50 py-1 font-bold text-slate-700">결재/확인</div>
-                                <div class="py-2 text-slate-300">인</div>
-                            </div>
-                            <div class="divide-y divide-slate-900">
-                                <div class="bg-slate-50 py-1 font-bold text-rose-700">총 득점</div>
-                                <div class="py-2 font-bold text-rose-600 text-xs">/ 100</div>
-                            </div>
-                        </div>
+                    <div class="pt-4">
+                        <!-- 1 & 2번 수정 반영: YMS ASSESSMENT -> YMS ENGLISH 명칭 변경 및 하단 소제목 유지 -->
+                        <span class="text-sm font-black tracking-tight text-slate-900 block font-sans">YMS ENGLISH</span>
+                        <span id="paper-academy-display" class="font-bold text-[11px] text-slate-500 tracking-wider block mt-0.5">YMS 어학원</span>
                     </div>
                     
                     <!-- 동적 출력되는 타이틀 명칭 영역 -->
@@ -452,14 +435,15 @@
                         Premium Monthly Evaluation
                     </h2>
                     
+                    <!-- 3번 수정 반영: Official Examination Sheet -> 시험 날짜(동적 바인딩) 배치 교정 -->
                     <div class="flex justify-between items-center bg-slate-50 border border-slate-200 rounded-lg p-2 text-[11px] font-medium font-sans">
-                        <div class="w-1/3 text-left pl-2 text-slate-500">
-                            <span>Official Examination Sheet</span>
+                        <div class="w-1/3 text-left pl-2 text-slate-700 font-bold">
+                            시험 날짜: <span id="paper-date-display" class="font-bold font-mono">2026. 06</span>
                         </div>
-                        <div class="w-2/3 text-right flex justify-end items-center gap-1">
-                            <span id="paper-date-display" class="text-slate-600 font-bold mr-4">2026. 06</span>
+                        <div class="w-2/3 text-right flex justify-end items-center gap-2 text-slate-700">
+                            <span>과목: <span id="paper-subject-display" class="font-semibold mr-3">영어</span></span>
                             <span>Class: <span class="border-b border-slate-400 w-16 inline-block mr-3">&nbsp;</span></span>
-                            <span>성명(Name): <span class="border-b border-slate-400 w-28 inline-block">&nbsp;</span></span>
+                            <span>성명(Name): <span class="border-b border-slate-400 w-24 inline-block">&nbsp;</span></span>
                         </div>
                     </div>
                 </div>
@@ -565,7 +549,7 @@
     <!-- CORE SYSTEM ENGINE SCRIPT -->
     <script>
         var isPaperTeacherMode = false;
-        var currentLevel = localStorage.getItem('monthly_exam_level') || 'middle'; // 기본값 중등부로 매핑
+        var currentLevel = localStorage.getItem('monthly_exam_level') || 'middle';
         
         var vocabCount = parseInt(localStorage.getItem('monthly_exam_vocab_count')) || 15;
         var vocabType = localStorage.getItem('monthly_exam_vocab_type') || 'matching';
@@ -649,12 +633,10 @@
             document.getElementById('custom-modal').classList.add('hidden');
         }
 
-        /* 🔄 [FEATURE UPDATED]: 지정해주신 영어 평가 명칭 자동 스위칭 가동 기어 */
         function changeLevel(level) {
             currentLevel = level;
             localStorage.setItem('monthly_exam_level', level);
             
-            // 영어 명칭 할당부
             let englishExamName = "Premium Monthly Evaluation";
             if (level === 'elementary_junior' || level === 'elementary') {
                 englishExamName = "Monthly Growth Challenge";
@@ -1037,7 +1019,6 @@
             if (cached) examData = JSON.parse(cached);
             else examData = JSON.parse(JSON.stringify(defaultExamData[currentLevel]));
             
-            // 초기 타이틀 세팅 동기화 기어
             let initialExamName = currentLevel === 'middle' ? "Premium Monthly Evaluation" : "Monthly Growth Challenge";
             document.getElementById('config-title').value = initialExamName;
 
