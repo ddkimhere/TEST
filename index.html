@@ -523,22 +523,6 @@
         var examData = null;
         var apiKey = localStorage.getItem('monthly_exam_api_key') || '';
 
-        const emojiDictionary = {
-            "apple": "🍎", "사과": "🍎", "banana": "🍌", "바나나": "🍌", "cat": "🐱", "고양이": "🐱",
-            "dog": "🐶", "개": "🐶", "강아지": "🐶", "sun": "☀️", "태양": "☀️", "해": "☀️",
-            "tree": "🌳", "나무": "🌳", "car": "🚗", "자동차": "🚗", "book": "📖", "책": "📖",
-            "milk": "🥛", "우유": "🥛", "fish": "🐟", "물고기": "🐟", "bird": "🐦", "새": "🐦"
-        };
-
-        function getEmojiForWord(word, mean) {
-            const w = (word || "").toLowerCase().trim();
-            const m = (mean || "").toLowerCase().trim();
-            if (emojiDictionary[w]) return emojiDictionary[w];
-            if (emojiDictionary[m]) return emojiDictionary[m];
-            const defaults = ["⭐", "✏️", "🎈", "🌟", "🍀"];
-            return defaults[(w.length + m.length) % defaults.length];
-        }
-
         const defaultExamData = {
             elementary_junior: { vocab: [], reading: [], translation: [], unscramble: [] },
             elementary: { vocab: [], reading: [], translation: [], unscramble: [] },
@@ -695,16 +679,20 @@
             }
         }
 
-        function applyVocabChange() {
-            const engs = document.getElementById('edit-vocab-eng').value.split('\n');
-            const kors = document.getElementById('edit-vocab-kor').value.split('\n');
-            const arr = [];
-            for (let i = 0; i < Math.max(engs.length, kors.length); i++) {
-                if (engs[i] || kors[i]) arr.push({ word: (engs[i]||"").trim(), mean: (kors[i]||"").trim() });
-            }
-            examData.vocab = arr; renderPaperPreview(); showToast("단어가 반영되었습니다.");
+      function applyVocabChange() {
+    const engs = document.getElementById('edit-vocab-eng').value.split('\n');
+    const kors = document.getElementById('edit-vocab-kor').value.split('\n');
+    let arr = [];
+    for (let i = 0; i < Math.max(engs.length, kors.length); i++) {
+        if ((engs[i]||"").trim() || (kors[i]||"").trim()) {
+            arr.push({ word: (engs[i]||"").trim(), mean: (kors[i]||"").trim() });
         }
-
+    }
+    // [추가된 부분] 셔플 함수 호출
+    examData.vocab = shuffleArray(arr); 
+    renderPaperPreview(); 
+    showToast("단어가 무작위로 섞여 반영되었습니다.");
+}
         function applyReadingChange() {
             for (let p = 0; p < readingCount; p++) {
                 if(document.getElementById(`edit-passage-${p}`)) {
