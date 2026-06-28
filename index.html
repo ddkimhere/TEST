@@ -179,8 +179,8 @@
                 </h2>
             </div>
             
-            <!-- Quick Paper Metadata Settings -->
-            <div class="grid grid-cols-2 md:grid-cols-8 gap-3 text-xs">
+            <!-- Quick Paper Metadata Settings [과목명 입력란 제거 완료] -->
+            <div class="grid grid-cols-2 md:grid-cols-7 gap-3 text-xs">
                 <div class="md:col-span-1">
                     <label class="block text-slate-400 font-medium mb-1">대상 학년 레벨</label>
                     <select id="config-level" onchange="changeLevel(this.value)" class="w-full bg-slate-800 border border-slate-700 rounded px-2.5 py-1.5 text-white focus:outline-none focus:border-indigo-500 font-bold text-amber-400">
@@ -217,10 +217,6 @@
                 <div class="md:col-span-1">
                     <label class="block text-slate-400 font-medium mb-1">학원명</label>
                     <input type="text" id="config-academy" value="YMS 어학원" oninput="syncHeaderData()" class="w-full bg-slate-800 border border-slate-700 rounded px-2.5 py-1.5 text-white">
-                </div>
-                <div class="md:col-span-1">
-                    <label class="block text-slate-400 font-medium mb-1">과목명</label>
-                    <input type="text" id="config-subject" value="영어 (English)" oninput="syncHeaderData()" class="w-full bg-slate-800 border border-slate-700 rounded px-2.5 py-1.5 text-white">
                 </div>
             </div>
             
@@ -430,10 +426,10 @@
                     </h2>
                     
                     <div class="flex justify-between items-center bg-slate-50 border border-slate-200 rounded-lg p-2 text-[11px] font-medium font-sans mt-4">
-                        <div class="w-1/3 text-left pl-2 text-slate-700 font-bold">
+                        <div class="w-1/2 text-left pl-2 text-slate-700 font-bold">
                             시험 날짜: <span id="paper-date-display" class="font-bold font-mono">2026. 06</span>
                         </div>
-                        <div class="w-2/3 text-right flex justify-end items-center gap-2 text-slate-700">
+                        <div class="w-1/2 text-right flex justify-end items-center gap-2 text-slate-700">
                             <span>Class: <span class="border-b border-slate-400 w-16 inline-block mr-3">&nbsp;</span></span>
                             <span>성명(Name): <span class="border-b border-slate-400 w-24 inline-block">&nbsp;</span></span>
                         </div>
@@ -589,6 +585,7 @@
             setTimeout(() => { modal.classList.remove('opacity-0'); }, 5);
         }
 
+        // 과목명 변수 참조 구문 간소화
         function syncHeaderData() {
             const title = document.getElementById('config-title').value;
             const date = document.getElementById('config-date').value;
@@ -689,16 +686,48 @@
                 const pBox = document.createElement('div');
                 pBox.className = "bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2 text-xs text-white";
                 
+                let qForm = '';
+                pass.questions.forEach((q, qIdx) => {
+                    const isMCQ = q.type === 'mcq';
+                    
+                    qForm += `
+                        <div class="space-y-2 p-3 bg-slate-900/50 rounded-lg border border-slate-850">
+                            <div class="flex justify-between items-center">
+                                <span class="font-bold text-indigo-400">질문 ${qIdx+1}</span>
+                                <select id="edit-qtype-${pIdx}-${qIdx}" onchange="changeQuestionType(${pIdx}, ${qIdx}, this.value)" class="bg-slate-800 border rounded text-white px-1 py-0.5 text-[10px]">
+                                    <option value="mcq" ${isMCQ?'selected':''}>객관식</option>
+                                    <option value="descriptive" ${q.type==='descriptive'?'selected':''}>서술형</option>
+                                </select>
+                            </div>
+                            <input type="text" id="edit-qtext-${pIdx}-${qIdx}" value="${q.q||''}" class="w-full bg-slate-900 border border-slate-800 rounded px-2 py-1 text-white">
+                            <div id="edit-mcq-box-${pIdx}-${qIdx}" class="${isMCQ?'':'hidden'} space-y-1.5">
+                                <div class="grid grid-cols-5 gap-1.5">
+                                    ${[0,1,2,3,4].map(c=>` <input type="text" id="edit-qchoice-${pIdx}-${qIdx}-${c}" value="${q.choices?.[c]||''}" class="w-full bg-slate-900 border border-slate-855 rounded px-1 text-slate-200"> `).join('')}
+                                </div>
+                                <input type="number" id="edit-qans-${pIdx}-${qIdx}" min="1" max="5" value="${q.answer||1}" class="w-12 bg-slate-900 rounded text-rose-500 text-center font-bold">
+                            </div>
+                            <div id="edit-text-box-${pIdx}-${qIdx}" class="${!isMCQ?'':'hidden'} space-y-1.5">
+                                <input type="text" id="edit-qans-text-${pIdx}-${qIdx}" value="${q.answerText||''}" class="w-full bg-slate-900 border border-slate-800 rounded px-2 py-1 text-rose-400" placeholder="교사용 모범 답안">
+                            </div>
+                        </div>`;
+                });
+                
                 pBox.innerHTML = `
                     <div class="flex justify-between font-bold text-amber-400 border-b border-slate-800 pb-1 mb-2"><span>[지문 ${pIdx+1} 편집 상자]</span></div>
                     <textarea id="edit-passage-${pIdx}" rows="4" class="w-full bg-slate-900 border p-2 text-slate-100 rounded font-serif" placeholder="여기에 영어 본문을 직접 입력하거나 붙여넣으세요.">${pass.passage}</textarea>
-                    <div class="text-[11px] text-slate-400 p-1">⚠️ 하위 문항은 일괄 출제 마법 구동 시 자동으로 정밀 연동 기입됩니다. (수동 선택 기능 폐기)</div>
+                    <div class="space-y-2 mt-2">${qForm}</div>
                 `;
                 list.appendChild(pBox);
             }
 
             document.getElementById('edit-translation').value = (examData.translation || []).map(x => `${x.eng}=${x.kor}`).join('\n');
             document.getElementById('edit-unscramble').value = (examData.unscramble || []).map(x => `${x.eng}=${x.kor}`).join('\n');
+        }
+
+        function changeQuestionType(pIdx, qIdx, type) {
+            document.getElementById(`edit-mcq-box-${pIdx}-${qIdx}`).classList.toggle('hidden', type !== 'mcq');
+            document.getElementById(`edit-text-box-${pIdx}-${qIdx}`).classList.toggle('hidden', type === 'mcq');
+            if (examData.reading[pIdx]?.questions[qIdx]) examData.reading[pIdx].questions[qIdx].type = type;
         }
 
         function switchEditorTab(tab) {
@@ -735,11 +764,22 @@
         }
 
         function applyReadingChange() {
+            const arr = [];
             for (let p = 0; p < readingCount; p++) {
-                if(document.getElementById(`edit-passage-${p}`)) {
-                    examData.reading[p].passage = document.getElementById(`edit-passage-${p}`).value.trim();
+                const passage = document.getElementById(`edit-passage-${p}`).value.trim();
+                const questions = [];
+                for (let q = 0; q < 3; q++) {
+                    const type = document.getElementById(`edit-qtype-${p}-${q}`).value;
+                    const qText = document.getElementById(`edit-qtext-${p}-${q}`).value.trim();
+                    const choices = [];
+                    for (let c = 0; c < 5; c++) choices.push(document.getElementById(`edit-qchoice-${p}-${q}-${c}`).value.trim());
+                    const answer = parseInt(document.getElementById(`edit-qans-${p}-${q}`).value) || 1;
+                    const answerText = document.getElementById(`edit-qans-text-${p}-${q}`).value.trim();
+                    questions.push({ q: qText, type, choices, answer, answerText });
                 }
+                arr.push({ passage, questions });
             }
+            examData.reading = arr;
             renderPaperPreview(); showToast("독해 지문이 반영되었습니다.");
         }
 
@@ -801,7 +841,7 @@
                 });
             }
 
-            // 2. Reading Section [유형 이름 및 뱃지 완전 삭제]
+            // 2. Reading Section
             const rList = document.getElementById('paper-reading-list'); rList.innerHTML = '';
             const activeReading = [...(examData.reading || [])].slice(0, readingCount);
             while(activeReading.length < readingCount) activeReading.push({ passage: "", questions: []});
@@ -821,10 +861,8 @@
                         });
                         inner = `<ul class="grid grid-cols-1 sm:grid-cols-2 gap-1 text-[11px] text-slate-700 mt-1.5 pl-1">${choicesList}</ul>`;
                     } else {
-                        // 서술형 (영어 질문 - 영어 답안 가이드 라인 매핑)
                         inner = isPaperTeacherMode ? `<div class="teacher-answer bg-rose-50/40 p-1.5 rounded text-xs pl-1 mt-1 font-sans">Model Answer: ${q.answerText || 'No answer guide provided.'}</div>` : '<div class="writing-line"></div>';
                     }
-                    // [수정] 유형 이름 표시부 완전 제외 (q.questionCategory 및 뱃지 미노출)
                     qHtml += `<div class="pt-3 pb-2"><p class="font-bold text-slate-900">${num}. ${q.q||'Assessment Question'}</p>${inner}</div>`;
                 });
 
@@ -903,7 +941,6 @@
             }
         }
 
-        /* 🤖 [PROMPT TUNED]: 오직 지문 맞춤 자동 설계 시스템 프롬프트 구성 엔진 */
         function getAIPromptSchema(targetTxt) {
             let coreGuideline = "";
             
