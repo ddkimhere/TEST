@@ -110,9 +110,6 @@
             .junior-mode .writing-line {
                 border-bottom: 2px dashed #334155 !important;
             }
-            .page-break-indicator {
-                display: none !important;
-            }
             * {
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
@@ -229,7 +226,7 @@
             
             <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
                 <div>
-                    <label class="block test-slate-400 font-medium mb-1">시험지 대제목</label>
+                    <label class="block text-slate-400 font-medium mb-1">시험지 대제목</label>
                     <input type="text" id="config-title" value="Premium Monthly Evaluation" oninput="syncHeaderData()" class="w-full bg-slate-800 border border-slate-700 rounded px-2.5 py-1.5 text-white">
                 </div>
                 <div>
@@ -303,7 +300,7 @@
                 <span class="text-amber-500"><i class="fa-solid fa-triangle-exclamation"></i> 주의: 캐시 소실 방지를 위해 수시로 보관하기를 누르세요.</span>
                 <div class="flex gap-2">
                     <button onclick="saveToLocalStorage()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 px-3 py-1.5 rounded-lg transition"><i class="fa-solid fa-floppy-disk mr-1"></i> 변경안 캐시 보관</button>
-                    <button onclick="resetToDemo()" class="bg-rose-950/40 hover:bg-rose-950 text-rose-300 border border-rose-900/50 px-3 py-1.5 rounded-lg transition">기본 데모 세트 복원</button>
+                    <button onclick="resetToDemo()" class="bg-rose-950/40 hover:bg-rose-950 text-rose-300 border border-rose-900/50 px-3 py-1.5 rounded-lg transition">데이터 비우기 (초기화)</button>
                 </div>
             </div>
         </div>
@@ -432,12 +429,11 @@
                         Premium Monthly Evaluation
                     </h2>
                     
-                    <!-- 1번 수정 반영: '과목: 영어' 데이터 완벽 삭제 처리 -->
                     <div class="flex justify-between items-center bg-slate-50 border border-slate-200 rounded-lg p-2 text-[11px] font-medium font-sans mt-4">
-                        <div class="w-1/2 text-left pl-2 text-slate-700 font-bold">
+                        <div class="w-1/3 text-left pl-2 text-slate-700 font-bold">
                             시험 날짜: <span id="paper-date-display" class="font-bold font-mono">2026. 06</span>
                         </div>
-                        <div class="w-1/2 text-right flex justify-end items-center gap-2 text-slate-700">
+                        <div class="w-2/3 text-right flex justify-end items-center gap-2 text-slate-700">
                             <span>Class: <span class="border-b border-slate-400 w-16 inline-block mr-3">&nbsp;</span></span>
                             <span>성명(Name): <span class="border-b border-slate-400 w-24 inline-block">&nbsp;</span></span>
                         </div>
@@ -593,15 +589,12 @@
             setTimeout(() => { modal.classList.remove('opacity-0'); }, 5);
         }
 
-        // 과목명 변수 바인딩 상태 유지
         function syncHeaderData() {
             const title = document.getElementById('config-title').value;
             const date = document.getElementById('config-date').value;
-            const subject = document.getElementById('config-subject').value;
 
             document.getElementById('paper-title-display').innerText = title;
             document.getElementById('paper-date-display').innerText = date;
-            document.getElementById('paper-subject-display').innerText = subject;
 
             const readingQuestionsCount = readingCount * 3;
             document.getElementById('paper-vocab-title-display').innerText = `[I] Vocabulary Evaluation (1 - ${vocabCount})`;
@@ -680,9 +673,6 @@
         function saveApiKey(val) { apiKey = val.trim(); localStorage.setItem('monthly_exam_api_key', apiKey); }
         function formatScore(num) { return Number.isInteger(num) ? num.toFixed(0) : num.toFixed(1); }
 
-        const middleSchoolTypes = `<option value="주제">주제</option><option value="요지">요지</option><option value="목적">목적</option><option value="내용일치">내용일치</option><option value="내용불일치">내용불일치</option><option value="순서">순서</option><option value="삽입">삽입</option><option value="함축">함축</option><option value="대명사">대명사</option><option value="어법">어법</option>`;
-        const elementaryTypes = `<option value="주제">주제</option><option value="내용일치">내용일치</option><option value="추론">추론</option><option value="서술">서술형</option><option value="배열">어순배열</option><option value="어법">어법</option><option value="어휘">어휘</option>`;
-
         function initializeEditorInputs() {
             if (!examData) return;
             document.getElementById('edit-vocab-eng').value = (examData.vocab || []).map(x => x.word).join('\n');
@@ -690,68 +680,25 @@
             
             const list = document.getElementById('reading-editor-list');
             list.innerHTML = '';
-            let catOptions = currentLevel === 'middle' ? middleSchoolTypes : elementaryTypes;
 
             for(let pIdx = 0; pIdx < readingCount; pIdx++) {
                 if (!examData.reading[pIdx]) {
-                    examData.reading[pIdx] = { passage: "", questions: [ {q:"",type:"mcq",questionCategory:"주제",choices:["","","","",""],answer:1,answerText:""},{q:"",type:"mcq",questionCategory:"내용일치",choices:["","","","",""],answer:1,answerText:""},{q:"",type:"descriptive",questionCategory:"서술",choices:[],answer:null,answerText:""} ] };
+                    examData.reading[pIdx] = { passage: "", questions: [ {q:"",type:"mcq",choices:["","","","",""],answer:1,answerText:""},{q:"",type:"mcq",choices:["","","","",""],answer:1,answerText:""},{q:"",type:"descriptive",choices:[],answer:null,answerText:""} ] };
                 }
                 const pass = examData.reading[pIdx];
                 const pBox = document.createElement('div');
                 pBox.className = "bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2 text-xs text-white";
                 
-                let qForm = '';
-                pass.questions.forEach((q, qIdx) => {
-                    const isMCQ = q.type === 'mcq';
-                    const isUnscramble = q.type === 'unscramble';
-                    let dynamicCatOptions = catOptions.replace(`value="${q.questionCategory}"`, `value="${q.questionCategory}" selected`);
-
-                    qForm += `
-                        <div class="space-y-2 p-3 bg-slate-900/50 rounded-lg border border-slate-850">
-                            <div class="flex justify-between items-center">
-                                <span class="font-bold text-indigo-400">질문 ${qIdx+1}</span>
-                                <div class="flex gap-2">
-                                    <select id="edit-qcat-${pIdx}-${qIdx}" class="bg-slate-800 border rounded text-white px-1 py-0.5 text-[10px]">
-                                        ${dynamicCatOptions}
-                                    </select>
-                                    <select id="edit-qtype-${pIdx}-${qIdx}" onchange="changeQuestionType(${pIdx}, ${qIdx}, this.value)" class="bg-slate-800 border rounded text-white px-1 py-0.5 text-[10px]">
-                                        <option value="mcq" ${isMCQ?'selected':''}>객관식</option>
-                                        <option value="descriptive" ${q.type==='descriptive'?'selected':''}>서술형</option>
-                                        <option value="unscramble" ${isUnscramble?'selected':''}>어순배열</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <input type="text" id="edit-qtext-${pIdx}-${qIdx}" value="${q.q||''}" class="w-full bg-slate-900 border border-slate-800 rounded px-2 py-1 text-white">
-                            <div id="edit-mcq-box-${pIdx}-${qIdx}" class="${isMCQ?'':'hidden'} space-y-1.5">
-                                <div class="grid grid-cols-5 gap-1.5">
-                                    ${[0,1,2,3,4].map(c=>` <input type="text" id="edit-qchoice-${pIdx}-${qIdx}-${c}" value="${q.choices?.[c]||''}" class="w-full bg-slate-900 border border-slate-850 rounded px-1 text-slate-200"> `).join('')}
-                                </div>
-                                <input type="number" id="edit-qans-${pIdx}-${qIdx}" min="1" max="5" value="${q.answer||1}" class="w-12 bg-slate-900 rounded text-rose-500 text-center font-bold">
-                            </div>
-                            <div id="edit-text-box-${pIdx}-${qIdx}" class="${!isMCQ?'':'hidden'} space-y-1.5">
-                                <input type="text" id="edit-qans-text-${pIdx}-${qIdx}" value="${q.answerText||''}" class="w-full bg-slate-900 border border-slate-800 rounded px-2 py-1 text-rose-400" placeholder="교사용 모범 답안">
-                                <input type="text" id="edit-qunscramble-chips-${pIdx}-${qIdx}" value="${q.shuffledWords?q.shuffledWords.join(', '):''}" class="w-full bg-slate-900 border border-slate-800 rounded px-2 py-1 text-emerald-400 ${isUnscramble?'':'hidden'}" placeholder="카드 단어 분리 (쉼표 구분)">
-                            </div>
-                        </div>`;
-                });
-                
                 pBox.innerHTML = `
                     <div class="flex justify-between font-bold text-amber-400 border-b border-slate-800 pb-1 mb-2"><span>[지문 ${pIdx+1} 편집 상자]</span></div>
                     <textarea id="edit-passage-${pIdx}" rows="4" class="w-full bg-slate-900 border p-2 text-slate-100 rounded font-serif" placeholder="여기에 영어 본문을 직접 입력하거나 붙여넣으세요.">${pass.passage}</textarea>
-                    <div class="space-y-2 mt-2">${qForm}</div>
+                    <div class="text-[11px] text-slate-400 p-1">⚠️ 하위 문항은 일괄 출제 마법 구동 시 자동으로 정밀 연동 기입됩니다. (수동 선택 기능 폐기)</div>
                 `;
                 list.appendChild(pBox);
             }
 
             document.getElementById('edit-translation').value = (examData.translation || []).map(x => `${x.eng}=${x.kor}`).join('\n');
             document.getElementById('edit-unscramble').value = (examData.unscramble || []).map(x => `${x.eng}=${x.kor}`).join('\n');
-        }
-
-        function changeQuestionType(pIdx, qIdx, type) {
-            document.getElementById(`edit-mcq-box-${pIdx}-${qIdx}`).classList.toggle('hidden', type !== 'mcq');
-            document.getElementById(`edit-text-box-${pIdx}-${qIdx}`).classList.toggle('hidden', type === 'mcq');
-            document.getElementById(`edit-qunscramble-chips-${pIdx}-${qIdx}`).classList.toggle('hidden', type !== 'unscramble');
-            if (examData.reading[pIdx]?.questions[qIdx]) examData.reading[pIdx].questions[qIdx].type = type;
         }
 
         function switchEditorTab(tab) {
@@ -788,25 +735,11 @@
         }
 
         function applyReadingChange() {
-            const arr = [];
             for (let p = 0; p < readingCount; p++) {
-                const passage = document.getElementById(`edit-passage-${p}`).value.trim();
-                const questions = [];
-                for (let q = 0; q < 3; q++) {
-                    const type = document.getElementById(`edit-qtype-${p}-${q}`).value;
-                    const qCat = document.getElementById(`edit-qcat-${p}-${q}`).value;
-                    const qText = document.getElementById(`edit-qtext-${p}-${q}`).value.trim();
-                    const choices = [];
-                    for (let c = 0; c < 5; c++) choices.push(document.getElementById(`edit-qchoice-${p}-${q}-${c}`).value.trim());
-                    const answer = parseInt(document.getElementById(`edit-qans-${p}-${q}`).value) || 1;
-                    const answerText = document.getElementById(`edit-qans-text-${p}-${q}`).value.trim();
-                    const wordsRaw = document.getElementById(`edit-qunscramble-chips-${p}-${q}`).value.trim();
-                    const shuffledWords = wordsRaw ? wordsRaw.split(',').map(x=>x.trim()) : [];
-                    questions.push({ q: qText, type, questionCategory: qCat, choices, answer, answerText, shuffledWords });
+                if(document.getElementById(`edit-passage-${p}`)) {
+                    examData.reading[p].passage = document.getElementById(`edit-passage-${p}`).value.trim();
                 }
-                arr.push({ passage, questions });
             }
-            examData.reading = arr;
             renderPaperPreview(); showToast("독해 지문이 반영되었습니다.");
         }
 
@@ -819,8 +752,7 @@
                 arr.push({ eng: p[0].trim(), kor: p[1].trim() });
             });
             examData.translation = arr;
-            renderPaperPreview();
-            showToast("영한해석 데이터가 반영되었습니다.");
+            renderPaperPreview(); showToast("영한해석 데이터가 반영되었습니다.");
         }
 
         function applyUnscrambleChange() {
@@ -832,8 +764,7 @@
                 arr.push({ eng: p[0].trim(), kor: p[1].trim() });
             });
             examData.unscramble = arr;
-            renderPaperPreview();
-            showToast("어순배열 데이터가 반영되었습니다.");
+            renderPaperPreview(); showToast("어순배열 데이터가 반영되었습니다.");
         }
 
         function saveToLocalStorage() { localStorage.setItem('monthly_exam_v3_data', JSON.stringify(examData)); showToast("캐시에 저장되었습니다."); }
@@ -870,7 +801,7 @@
                 });
             }
 
-            // 2. Reading Section
+            // 2. Reading Section [유형 이름 및 뱃지 완전 삭제]
             const rList = document.getElementById('paper-reading-list'); rList.innerHTML = '';
             const activeReading = [...(examData.reading || [])].slice(0, readingCount);
             while(activeReading.length < readingCount) activeReading.push({ passage: "", questions: []});
@@ -889,21 +820,20 @@
                             choicesList += `<li ${isPaperTeacherMode && q.answer===(cIdx+1)?'class="teacher-answer bg-rose-50 px-1.5 rounded"':''}>${"①②③④⑤"[cIdx]} ${c}</li>`;
                         });
                         inner = `<ul class="grid grid-cols-1 sm:grid-cols-2 gap-1 text-[11px] text-slate-700 mt-1.5 pl-1">${choicesList}</ul>`;
-                    } else if (q.type === 'unscramble') {
-                        const chips = (q.shuffledWords || []).map(w=>`<span class="border bg-slate-50 px-2 py-0.5 rounded text-[10px] font-sans">${w}</span>`).join(' ');
-                        inner = `<div class="mt-2 space-y-1"><div class="flex flex-wrap gap-1.5 border border-dashed p-2 rounded bg-slate-50">${chips}</div>${isPaperTeacherMode ? `<div class="teacher-answer text-xs pl-1">정답: ${q.answerText}</div>` : '<div class="writing-line"></div>'}</div>`;
                     } else {
-                        inner = isPaperTeacherMode ? `<div class="teacher-answer bg-rose-50/40 p-1.5 rounded text-xs pl-1 mt-1">정답 예시: ${q.answerText}</div>` : '<div class="writing-line"></div>';
+                        // 서술형 (영어 질문 - 영어 답안 가이드 라인 매핑)
+                        inner = isPaperTeacherMode ? `<div class="teacher-answer bg-rose-50/40 p-1.5 rounded text-xs pl-1 mt-1 font-sans">Model Answer: ${q.answerText || 'No answer guide provided.'}</div>` : '<div class="writing-line"></div>';
                     }
-                    qHtml += `<div class="pt-3 pb-2"><p class="font-bold text-slate-900">${num}. ${q.q||'출제 문항'} <span class="text-[9px] bg-slate-100 text-slate-500 px-1 rounded border">${q.questionCategory||'독해'}</span></p>${inner}</div>`;
+                    // [수정] 유형 이름 표시부 완전 제외 (q.questionCategory 및 뱃지 미노출)
+                    qHtml += `<div class="pt-3 pb-2"><p class="font-bold text-slate-900">${num}. ${q.q||'Assessment Question'}</p>${inner}</div>`;
                 });
 
                 passBlock.innerHTML = `
                     <div class="bg-slate-50 p-4 border border-slate-200 rounded-xl text-[11.5px] font-serif leading-relaxed text-slate-800 mb-4 shadow-inner">
-                        <span class="font-bold text-indigo-900 block mb-2 text-xs"><i class="fa-solid fa-book-open text-indigo-600 mr-1"></i> [지문 및 독해 본문 ${pIdx+1}]</span>
+                        <span class="font-bold text-indigo-900 block mb-2 text-xs"><i class="fa-solid fa-book-open text-indigo-600 mr-1"></i> [Passage ${pIdx+1}]</span>
                         ${pass.passage || "<span class='text-slate-400'>지문 내용이 존재하지 않습니다. 선생님 편집기에서 입력해주세요.</span>"}
                     </div>
-                    <div class="space-y-4 pt-2 divide-y divide-slate-100">${qHtml || '<div class="text-slate-400 text-xs p-2 text-center border border-dashed rounded bg-slate-50">AI 마법을 발동하거나 수동으로 문항을 채워주세요.</div>'}</div>
+                    <div class="space-y-4 pt-2 divide-y divide-slate-100">${qHtml || '<div class="text-slate-400 text-xs p-2 text-center border border-dashed rounded bg-slate-50">AI 마법을 발동하거나 지문을 채워주세요.</div>'}</div>
                 `;
                 rList.appendChild(passBlock);
             });
@@ -973,38 +903,38 @@
             }
         }
 
+        /* 🤖 [PROMPT TUNED]: 오직 지문 맞춤 자동 설계 시스템 프롬프트 구성 엔진 */
         function getAIPromptSchema(targetTxt) {
-            let levelPrompt = "";
-            let schemaCategories = "";
+            let coreGuideline = "";
             
             if (currentLevel === 'middle') {
-                levelPrompt = `대상 학년: 중등부. 
-수능 및 고등 모의고사(Mock Exam) 스타일에 가깝게 출제해 주세요. 질문(q)은 반드시 명료한 한국어로 작성하며, 난이도 있게 구성하세요.
-[⭐️핵심 요구사항] 총 3문제 중 반드시 1문제는 서술형("type": "descriptive", "questionCategory": "어법" 또는 "함축")으로 출제되어야 하며, 나머지 2문제는 아래 유형 중 중복되지 않게 객관식(mcq)으로 출제되어야 합니다.
-허용되는 문제 유형(questionCategory): ["주제", "요지", "목적", "내용일치", "내용불일치", "순서", "삽입", "함축", "대명사", "어법"].`;
-                schemaCategories = `"주제" | "요지" | "목적" | "내용일치" | "내용불일치" | "순서" | "삽입" | "함축" | "대명사" | "어법"`;
+                coreGuideline = `대상 수준: 중등부 수준의 수능/모의고사 스타일 기출 변형.
+[문항 조율 구성 조건]:
+- 총 3문항을 무조건 자동 생성해야 함.
+- 3문항 중 '반드시 1문항'은 서술형 주관식("type": "descriptive")이어야 합니다. 이 서술형 문제의 질문(q)은 반드시 완벽한 영어(English)로 작성하고, 그에 상응하는 정답 가이드라인(answerText) 또한 온전한 영어 문장 혹은 핵심 영어 표현으로 설계하세요. 
+- 나머지 2문항은 ["주제", "요지", "목적", "내용일치", "내용불일치", "순서", "삽입", "함축", "대명사", "어법"] 중 지문에 어울리는 다른 유형으로 자동 판단하여 객관식("type": "mcq")으로 구성하고, 한글 질문 및 5개 한글 선택지를 채우세요.`;
             } else {
-                levelPrompt = `대상 학년: 초등부. 
-대형 어학원(Language School) 평가 스타일로 출제해 주세요. 질문(q) 자체를 영어로 작성하는 것을 적극 권장합니다.
-[⭐️핵심 요구사항] 총 3문제 중 반드시 1문제는 학생이 단답형이나 문장을 영어/한글로 서술하여 작성하는 서술형("type": "descriptive", "questionCategory": "서술")으로 출제되어야 하며, 나머지 2문제는 객관식(mcq) 또는 어순배열(unscramble)로 출제되어야 합니다.
-허용되는 문제 유형(questionCategory): ["주제", "내용일치", "추론", "서술", "배열", "어법", "어휘"].`;
-                schemaCategories = `"주제" | "내용일치" | "추론" | "서술" | "배열" | "어법" | "어휘"`;
+                coreGuideline = `대상 수준: 초등부 전문 어학원 정기 평가 스타일.
+[문항 조율 구성 조건]:
+- 총 3문항을 무조건 자동 생성해야 함.
+- 3문항 중 '반드시 1문항'은 서술형 주관식("type": "descriptive")이어야 합니다. 이 서술형 문제의 질문(q)은 반드시 완벽한 영어(English)로 작성하고, 정답 가이드라인(answerText)도 영어 표현/문장으로 설계해야 합니다. (배열 문제 금지)
+- 나머지 2문항은 ["주제", "내용일치", "추론", "어법", "어휘"] 중 지문에 가장 어울리는 다른 유형을 AI가 자동 채택하여 객관식("type": "mcq")으로 구성하되, 질문 및 선택지 5개 모두 세련된 영어(English)로 작성해 주세요.`;
             }
 
-            return `지문 텍스트: "${targetTxt}"
-위 지문을 기반으로 3문제를 출제하세요.
-${levelPrompt}
+            return `지문 본문: "${targetTxt}"
+위 본문을 기반으로 3문제를 출제하세요.
+${coreGuideline}
 
-결과는 반드시 아래의 JSON 스키마 규격을 따르는 배열형태로만 리턴하세요 (마크다운 백틱 등 기타 문자열 절대 금지):
+⚠️ 절대 문제 텍스트 내부에 유형명(예: [주제], [서술형])을 명시하지 마십시오.
+출제 결과는 마크다운 기호를 완전히 제외하고 오직 순수한 JSON 스키마 규격(배열)으로만 리턴하세요:
 [
   {
-    "q": "질문 텍스트",
-    "type": "mcq" | "descriptive" | "unscramble",
-    "questionCategory": ${schemaCategories},
-    "choices": ["선택지1", "선택지2", "선택지3", "선택지4", "선택지5"], // type이 mcq일 경우 필수, 그 외는 빈 배열 []
-    "answer": 1, // mcq일 경우 1~5 정답 번호, 그 외는 null
-    "answerText": "서술형 정답 예시 또는 배열 완성형 정답 문장", // descriptive 또는 unscramble일 경우 필수
-    "shuffledWords": ["word1", "word2"] // unscramble일 경우 흐트러뜨릴 단어 배열, 그 외는 빈 배열 []
+    "q": "질문 내용 (절대 유형 카테고리 텍스트를 포함하지 마세요)",
+    "type": "mcq" | "descriptive",
+    "questionCategory": "AI가 내부 판단한 분류명", 
+    "choices": ["선택지1", "선택지2", "선택지3", "선택지4", "선택지5"], // type이 mcq일 때 필수, descriptive는 []
+    "answer": 1, // mcq일 때 1~5 정수, descriptive는 null
+    "answerText": "서술형 영어 모범 답안 가이드라인 텍스트" // descriptive일 때 필수, mcq는 ""
   }
 ]`;
         }
@@ -1017,14 +947,14 @@ ${levelPrompt}
             overlay.classList.remove('hidden');
             
             const prompt = getAIPromptSchema(txt);
-            
             const result = await makeGeminiCallWithRetry({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json" } });
             overlay.classList.add('hidden');
+            
             if (result) {
                 try {
                     examData.reading[pIdx] = { passage: txt, questions: JSON.parse(result).slice(0, 3) };
                     initializeEditorInputs(); syncHeaderData(); renderPaperPreview();
-                } catch (e) { console.log(e); openModal("AI 파싱 오류", "데이터 구조가 맞지 않습니다. 다시 시도해주세요."); }
+                } catch (e) { console.log(e); openModal("AI 오류", "데이터 정합성 매핑 실패. 다시 시도해 주세요."); }
             }
         }
 
@@ -1039,16 +969,18 @@ ${levelPrompt}
             const overlay = document.getElementById('ai-loading-overlay'); 
             overlay.classList.remove('hidden');
             
-            let levelGuideline = currentLevel === 'middle' ? 
-                `중등부 모의고사 기출 스타일. 지문당 출제되는 3문제 중 반드시 '최소 1문제'는 "type": "descriptive" 규격의 서술형(어법 고치기 또는 함축 의미 서술)이어야 합니다. 질문은 한글.` : 
-                `초등부 어학원 스타일. 지문당 출제되는 3문제 중 반드시 '최소 1문제'는 "type": "descriptive" 규격의 주관식 서술형이어야 합니다. 질문은 영어 권장.`;
+            let systemRule = currentLevel === 'middle' ?
+                `중등부 모의고사 기출 스타일. 지문당 출제되는 3문제 중 1문항은 반드시 완벽한 영어 질문과 영어 답안을 요구하는 서술형 주관식("type": "descriptive")이어야 합니다. 나머지 2문항은 적절한 수능 유형 객관식으로 자동 분배하세요.` :
+                `초등부 어학원 스타일. 모든 문제의 질문 및 객관식 보기 5개는 세련된 영어(English)로 작성되어야 합니다. 지문당 3문제 중 1문항은 반드시 영어 질문과 영어 답안을 요구하는 주관식 서술형이어야 합니다.`;
 
-            const prompt = `각 지문별로 최적의 3문항씩 총 ${readingCount * 3}문항을 생성하세요.
-출제 지침: ${levelGuideline}
-JSON 구조(마크다운 기호 금지) 리턴: 
-{"reading":[{"passageId":0,"questions":[{"q":"질문","type":"mcq|descriptive|unscramble","questionCategory":"유형","choices":["1","2","3","4","5"],"answer":1,"answerText":"","shuffledWords":[]}]}]}
+            const prompt = `각 지문별로 최적의 3문항씩 총 ${readingCount * 3}문항을 자동 분배 생성하세요.
+출제 기준: ${systemRule}
+⚠️ 문제 문장 내부나 어디에도 유형 분류명(예: [요지], [서술])을 문자열로 노출하지 마세요.
 
-지문 목록: \n ${JSON.stringify(passages)}`;
+JSON 구조 리턴: 
+{"reading":[{"passageId":0,"questions":[{"q":"질문","type":"mcq|descriptive","questionCategory":"","choices":["1","2","3","4","5"],"answer":1,"answerText":""}]}]}
+
+지문 목록 데이터 세트: \n ${JSON.stringify(passages)}`;
 
             const result = await makeGeminiCallWithRetry({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json" } });
             overlay.classList.add('hidden');
@@ -1058,7 +990,7 @@ JSON 구조(마크다운 기호 금지) 리턴:
                         if (examData.reading[item.passageId]) examData.reading[item.passageId].questions = item.questions;
                     });
                     initializeEditorInputs(); syncHeaderData(); renderPaperPreview();
-                } catch (e) { console.log(e); openModal("AI 파싱 오류", "전체 지문 처리 중 오류가 발생했습니다."); }
+                } catch (e) { console.log(e); openModal("AI 일괄 처리 오류", "파싱 오류 발생. 다시 생성 마법을 작동해 주세요."); }
             }
         }
 
