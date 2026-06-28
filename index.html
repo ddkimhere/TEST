@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>YMS 월말평가 인쇄 및 편집 관리 시스템</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Inter:wght=300;400;500;600;700;800&family=Noto+Sans+KR:wght=300;400;500;700;900&family=Nanum+Myeongjo:wght=400;700;800&display=swap');
@@ -119,7 +117,6 @@
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-800 pb-16 transition-colors duration-300">
 
-    <!-- AI Generation Loading Modal Overlay -->
     <div id="ai-loading-overlay" class="fixed inset-0 bg-slate-955/85 backdrop-blur-md z-[200] flex flex-col items-center justify-center hidden">
         <div class="bg-slate-900 border border-slate-800 p-8 rounded-2xl max-w-md w-full mx-4 shadow-2xl flex flex-col items-center space-y-5 text-center">
             <div class="relative">
@@ -136,7 +133,6 @@
         </div>
     </div>
 
-    <!-- Top Configuration & Navigation Bar -->
     <header class="no-print bg-slate-900 text-white shadow-md sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="flex items-center gap-3">
@@ -168,10 +164,8 @@
         </div>
     </header>
 
-    <!-- Main Workspace Container -->
     <main class="max-w-7xl mx-auto px-4 mt-6">
         
-        <!-- Teacher Dashboard Drawer -->
         <div id="teacher-drawer" class="no-print hidden mb-6 bg-slate-900 text-slate-100 rounded-xl p-5 border border-slate-800 shadow-2xl space-y-4">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                 <h2 class="text-sm font-bold flex items-center gap-2 text-amber-400">
@@ -179,7 +173,6 @@
                 </h2>
             </div>
             
-            <!-- Quick Paper Metadata Settings [과목명 입력란 제거 완료] -->
             <div class="grid grid-cols-2 md:grid-cols-7 gap-3 text-xs">
                 <div class="md:col-span-1">
                     <label class="block text-slate-400 font-medium mb-1">대상 학년 레벨</label>
@@ -238,7 +231,6 @@
                 </div>
             </div>
 
-            <!-- Tab Controls for Bulk Editors -->
             <div class="border-t border-slate-800 pt-3">
                 <div class="flex gap-1.5 border-b border-slate-800 mb-3" id="editor-tabs">
                     <button onclick="switchEditorTab('vocab')" id="tab-vocab" class="px-3 py-1.5 text-xs font-semibold text-white border-b-2 border-indigo-500 bg-slate-800 rounded-t-md">단어</button>
@@ -247,7 +239,6 @@
                     <button onclick="switchEditorTab('unscramble')" id="tab-unscramble" class="px-3 py-1.5 text-xs font-semibold text-slate-400 hover:text-white rounded-t-md">어순배열</button>
                 </div>
 
-                <!-- Vocab Editor Panel -->
                 <div id="panel-vocab" class="editor-panel space-y-2">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                         <div>
@@ -264,7 +255,6 @@
                     </div>
                 </div>
 
-                <!-- Reading Editor Panel -->
                 <div id="panel-reading" class="editor-panel hidden space-y-4">
                     <div id="reading-editor-list" class="space-y-4 max-h-96 overflow-y-auto pr-2"></div>
                     <div class="flex justify-end pt-2 border-t border-slate-800">
@@ -272,7 +262,6 @@
                     </div>
                 </div>
 
-                <!-- Translation Editor Panel -->
                 <div id="panel-translation" class="editor-panel hidden space-y-2">
                     <p class="text-xs text-slate-400">한 줄에 하나씩 <strong class="text-indigo-400">영어문장=한국어해석</strong> 형식으로 기입하세요.</p>
                     <textarea id="edit-translation" rows="6" placeholder="Example Sentence=예시 한국어 번역문" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 font-mono text-xs text-emerald-400 focus:outline-none leading-relaxed"></textarea>
@@ -281,7 +270,6 @@
                     </div>
                 </div>
 
-                <!-- Unscramble Editor Panel -->
                 <div id="panel-unscramble" class="editor-panel hidden space-y-2">
                     <p class="text-xs text-slate-400">한 줄에 하나씩 <strong class="text-indigo-400">영어완성문장=한국어힌트</strong> 형식으로 기입하세요.</p>
                     <textarea id="edit-unscramble" rows="6" placeholder="I have a book=나는 책을 가지고 있다" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 font-mono text-xs text-emerald-400 focus:outline-none leading-relaxed"></textarea>
@@ -291,7 +279,6 @@
                 </div>
             </div>
 
-            <!-- Global Action Tools -->
             <div class="flex justify-between items-center pt-3 border-t border-slate-800 text-xs font-semibold">
                 <span class="text-amber-500"><i class="fa-solid fa-triangle-exclamation"></i> 주의: 캐시 소실 방지를 위해 수시로 보관하기를 누르세요.</span>
                 <div class="flex gap-2">
@@ -301,10 +288,8 @@
             </div>
         </div>
 
-        <!-- VIEW: PAPER PRINT PREVIEW MODE -->
         <div id="view-paper-preview" class="flex flex-col lg:flex-row gap-6 justify-center">
             
-            <!-- Left Side Control Column -->
             <div class="lg:w-80 space-y-4 no-print flex-shrink-0">
                 <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm space-y-4 sticky top-24">
                     
@@ -411,10 +396,8 @@
                 </div>
             </div>
 
-            <!-- Realistic Printable A4 Sheet Render Frame -->
             <div id="print-sheet" class="paper-preview w-full max-w-[210mm] min-h-[297mm] p-8 md:p-12 relative bg-white transition-all duration-300">
                 
-                <!-- RE-DESIGNED SOPHISTICATED PRINT HEADER -->
                 <div class="relative pb-3 mb-5 border-b-2 border-slate-900">
                     <div class="absolute top-0 left-0 w-full h-[3px] bg-slate-900"></div>
                     <div class="pt-3">
@@ -436,10 +419,8 @@
                     </div>
                 </div>
 
-                <!-- DYNAMIC EXAM SECTIONS -->
                 <div class="space-y-6" id="paper-content-area">
                     
-                    <!-- Section 1: Vocabulary -->
                     <div class="avoid-break">
                         <h3 class="font-bold text-xs bg-slate-100 px-2 py-1.5 border-l-4 border-slate-900 mb-3 flex justify-between items-center">
                             <div class="flex flex-col">
@@ -457,7 +438,6 @@
 
                     <div id="break-reading"></div>
 
-                    <!-- Section 2: Reading Comprehension -->
                     <div>
                         <h3 class="font-bold text-xs bg-slate-100 px-2 py-1.5 border-l-4 border-slate-900 mb-3 flex justify-between items-center">
                             <div class="flex flex-col">
@@ -474,7 +454,6 @@
 
                     <div id="break-translation"></div>
 
-                    <!-- Section 3: Translation -->
                     <div>
                         <h3 class="font-bold text-xs bg-slate-100 px-2 py-1.5 border-l-4 border-slate-900 mb-3 flex justify-between items-center">
                             <div class="flex flex-col">
@@ -491,7 +470,6 @@
 
                     <div id="break-unscramble"></div>
 
-                    <!-- Section 4: Unscramble -->
                     <div>
                         <h3 class="font-bold text-xs bg-slate-100 px-2 py-1.5 border-l-4 border-slate-900 mb-3 flex justify-between items-center">
                             <div class="flex flex-col">
@@ -514,7 +492,6 @@
         </div>
     </main>
 
-    <!-- Custom Modal Dialogs -->
     <div id="custom-modal" class="no-print fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
         <div class="bg-white rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl transform scale-95 transition-transform duration-300 space-y-4">
             <div class="flex items-center gap-3 border-b pb-3" id="modal-header-container">
@@ -528,13 +505,11 @@
         </div>
     </div>
 
-    <!-- Live Toast Alert Panel -->
     <div id="toast" class="no-print fixed bottom-6 right-6 bg-slate-900 text-slate-200 text-xs px-4 py-3 rounded-xl border border-slate-800 shadow-2xl flex items-center gap-2 transform translate-y-20 opacity-0 transition-all duration-300 z-[100]">
         <i class="fa-solid fa-circle-check text-emerald-400 text-sm"></i>
         <span id="toast-text">저장되었습니다.</span>
     </div>
 
-    <!-- CORE SYSTEM ENGINE SCRIPT -->
     <script>
         var isPaperTeacherMode = false;
         var currentLevel = localStorage.getItem('monthly_exam_level') || 'middle';
@@ -585,7 +560,6 @@
             setTimeout(() => { modal.classList.remove('opacity-0'); }, 5);
         }
 
-        // 과목명 변수 참조 구문 간소화
         function syncHeaderData() {
             const title = document.getElementById('config-title').value;
             const date = document.getElementById('config-date').value;
@@ -686,48 +660,16 @@
                 const pBox = document.createElement('div');
                 pBox.className = "bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2 text-xs text-white";
                 
-                let qForm = '';
-                pass.questions.forEach((q, qIdx) => {
-                    const isMCQ = q.type === 'mcq';
-                    
-                    qForm += `
-                        <div class="space-y-2 p-3 bg-slate-900/50 rounded-lg border border-slate-850">
-                            <div class="flex justify-between items-center">
-                                <span class="font-bold text-indigo-400">질문 ${qIdx+1}</span>
-                                <select id="edit-qtype-${pIdx}-${qIdx}" onchange="changeQuestionType(${pIdx}, ${qIdx}, this.value)" class="bg-slate-800 border rounded text-white px-1 py-0.5 text-[10px]">
-                                    <option value="mcq" ${isMCQ?'selected':''}>객관식</option>
-                                    <option value="descriptive" ${q.type==='descriptive'?'selected':''}>서술형</option>
-                                </select>
-                            </div>
-                            <input type="text" id="edit-qtext-${pIdx}-${qIdx}" value="${q.q||''}" class="w-full bg-slate-900 border border-slate-800 rounded px-2 py-1 text-white">
-                            <div id="edit-mcq-box-${pIdx}-${qIdx}" class="${isMCQ?'':'hidden'} space-y-1.5">
-                                <div class="grid grid-cols-5 gap-1.5">
-                                    ${[0,1,2,3,4].map(c=>` <input type="text" id="edit-qchoice-${pIdx}-${qIdx}-${c}" value="${q.choices?.[c]||''}" class="w-full bg-slate-900 border border-slate-855 rounded px-1 text-slate-200"> `).join('')}
-                                </div>
-                                <input type="number" id="edit-qans-${pIdx}-${qIdx}" min="1" max="5" value="${q.answer||1}" class="w-12 bg-slate-900 rounded text-rose-500 text-center font-bold">
-                            </div>
-                            <div id="edit-text-box-${pIdx}-${qIdx}" class="${!isMCQ?'':'hidden'} space-y-1.5">
-                                <input type="text" id="edit-qans-text-${pIdx}-${qIdx}" value="${q.answerText||''}" class="w-full bg-slate-900 border border-slate-800 rounded px-2 py-1 text-rose-400" placeholder="교사용 모범 답안">
-                            </div>
-                        </div>`;
-                });
-                
                 pBox.innerHTML = `
                     <div class="flex justify-between font-bold text-amber-400 border-b border-slate-800 pb-1 mb-2"><span>[지문 ${pIdx+1} 편집 상자]</span></div>
                     <textarea id="edit-passage-${pIdx}" rows="4" class="w-full bg-slate-900 border p-2 text-slate-100 rounded font-serif" placeholder="여기에 영어 본문을 직접 입력하거나 붙여넣으세요.">${pass.passage}</textarea>
-                    <div class="space-y-2 mt-2">${qForm}</div>
+                    <div class="text-[11px] text-slate-400 p-1">⚠️ 하위 문항은 일괄 출제 마법 구동 시 자동으로 정밀 연동 기입됩니다.</div>
                 `;
                 list.appendChild(pBox);
             }
 
             document.getElementById('edit-translation').value = (examData.translation || []).map(x => `${x.eng}=${x.kor}`).join('\n');
             document.getElementById('edit-unscramble').value = (examData.unscramble || []).map(x => `${x.eng}=${x.kor}`).join('\n');
-        }
-
-        function changeQuestionType(pIdx, qIdx, type) {
-            document.getElementById(`edit-mcq-box-${pIdx}-${qIdx}`).classList.toggle('hidden', type !== 'mcq');
-            document.getElementById(`edit-text-box-${pIdx}-${qIdx}`).classList.toggle('hidden', type === 'mcq');
-            if (examData.reading[pIdx]?.questions[qIdx]) examData.reading[pIdx].questions[qIdx].type = type;
         }
 
         function switchEditorTab(tab) {
@@ -764,22 +706,11 @@
         }
 
         function applyReadingChange() {
-            const arr = [];
             for (let p = 0; p < readingCount; p++) {
-                const passage = document.getElementById(`edit-passage-${p}`).value.trim();
-                const questions = [];
-                for (let q = 0; q < 3; q++) {
-                    const type = document.getElementById(`edit-qtype-${p}-${q}`).value;
-                    const qText = document.getElementById(`edit-qtext-${p}-${q}`).value.trim();
-                    const choices = [];
-                    for (let c = 0; c < 5; c++) choices.push(document.getElementById(`edit-qchoice-${p}-${q}-${c}`).value.trim());
-                    const answer = parseInt(document.getElementById(`edit-qans-${p}-${q}`).value) || 1;
-                    const answerText = document.getElementById(`edit-qans-text-${p}-${q}`).value.trim();
-                    questions.push({ q: qText, type, choices, answer, answerText });
+                if(document.getElementById(`edit-passage-${p}`)) {
+                    examData.reading[p].passage = document.getElementById(`edit-passage-${p}`).value.trim();
                 }
-                arr.push({ passage, questions });
             }
-            examData.reading = arr;
             renderPaperPreview(); showToast("독해 지문이 반영되었습니다.");
         }
 
@@ -969,13 +900,14 @@ ${coreGuideline}
     "q": "질문 내용 (절대 유형 카테고리 텍스트를 포함하지 마세요)",
     "type": "mcq" | "descriptive",
     "questionCategory": "AI가 내부 판단한 분류명", 
-    "choices": ["선택지1", "선택지2", "선택지3", "선택지4", "선택지5"], // type이 mcq일 때 필수, descriptive는 []
-    "answer": 1, // mcq일 때 1~5 정수, descriptive는 null
-    "answerText": "서술형 영어 모범 답안 가이드라인 텍스트" // descriptive일 때 필수, mcq는 ""
+    "choices": ["선택지1", "선택지2", "선택지3", "선택지4", "선택지5"],
+    "answer": 1,
+    "answerText": "서술형 영어 모범 답안 가이드라인 텍스트"
   }
 ]`;
         }
 
+        /* 🔄 [CRITICAL FIX]: AI 출제 시 기존 영어 본문(Passage) 유지 연동 교정 */
         async function generateAIQuestionsForPassage(pIdx) {
             const txt = document.getElementById(`edit-passage-${pIdx}`).value.trim();
             if (!txt || txt.length < 10 || !apiKey) return;
@@ -989,12 +921,14 @@ ${coreGuideline}
             
             if (result) {
                 try {
+                    // [해결] 기존에 적어둔 본문 텍스트(txt)를 결과 매핑 시 누락 없이 재바인딩 고정
                     examData.reading[pIdx] = { passage: txt, questions: JSON.parse(result).slice(0, 3) };
                     initializeEditorInputs(); syncHeaderData(); renderPaperPreview();
                 } catch (e) { console.log(e); openModal("AI 오류", "데이터 정합성 매핑 실패. 다시 시도해 주세요."); }
             }
         }
 
+        /* 🔄 [CRITICAL FIX]: 전체 지문 AI 일괄 출제 시에도 각 지문 본문 유지 연동 교정 */
         async function generateAIQuestionsAllPassages() {
             const passages = [];
             for (let i = 0; i < readingCount; i++) {
@@ -1023,8 +957,15 @@ JSON 구조 리턴:
             overlay.classList.add('hidden');
             if (result) {
                 try {
-                    JSON.parse(result).reading.forEach(item => {
-                        if (examData.reading[item.passageId]) examData.reading[item.passageId].questions = item.questions;
+                    const parsed = JSON.parse(result);
+                    parsed.reading.forEach(item => {
+                        const pId = item.passageId;
+                        // [해결] 에디터에 적혀있던 실제 지문 텍스트(passages)를 보존하여 결과 매핑 처리
+                        const actualText = document.getElementById(`edit-passage-${pId}`)?.value.trim() || "";
+                        examData.reading[pId] = {
+                            passage: actualText,
+                            questions: item.questions
+                        };
                     });
                     initializeEditorInputs(); syncHeaderData(); renderPaperPreview();
                 } catch (e) { console.log(e); openModal("AI 일괄 처리 오류", "파싱 오류 발생. 다시 생성 마법을 작동해 주세요."); }
