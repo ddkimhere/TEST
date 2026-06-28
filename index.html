@@ -230,7 +230,7 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
                 <div>
                     <label class="block text-slate-400 font-medium mb-1">시험지 대제목</label>
-                    <input type="text" id="config-title" value="6월 중등부 영어 학업성취도 평가" oninput="syncHeaderData()" class="w-full bg-slate-800 border border-slate-700 rounded px-2.5 py-1.5 text-white">
+                    <input type="text" id="config-title" value="Premium Monthly Evaluation" oninput="syncHeaderData()" class="w-full bg-slate-800 border border-slate-700 rounded px-2.5 py-1.5 text-white">
                 </div>
                 <div>
                     <label class="block text-slate-400 font-medium mb-1">인쇄 일자</label>
@@ -421,32 +421,43 @@
             <!-- Realistic Printable A4 Sheet Render Frame -->
             <div id="print-sheet" class="paper-preview w-full max-w-[210mm] min-h-[297mm] p-8 md:p-12 relative bg-white transition-all duration-300">
                 
-                <!-- NEW LUXURY SESTYLISH HEADER -->
-                <div class="relative pb-5 mb-8 border-b-2 border-slate-900">
-                    <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900"></div>
-                    <div class="flex justify-between items-start pt-4">
-                        <div class="flex items-center gap-3">
-                            <div class="border border-slate-900 p-2 rounded-lg bg-slate-50 font-black text-slate-900 text-sm tracking-tighter">YMS</div>
-                            <div>
-                                <span id="paper-academy-display" class="font-extrabold text-[13px] tracking-widest text-slate-900 block font-serif">YMS 어학원</span>
-                                <span id="paper-subject-display" class="text-[10px] text-slate-500 font-semibold">과목: 영어 (English)</span>
-                            </div>
+                <!-- RE-DESIGNED SOPHISTICATED PRINT HEADER (NO LOGO IMAGE) -->
+                <div class="relative pb-4 mb-8 border-b-2 border-slate-900">
+                    <div class="absolute top-0 left-0 w-full h-[3px] bg-slate-900"></div>
+                    <div class="flex justify-between items-start pt-3">
+                        <div>
+                            <span class="text-sm font-black tracking-tight text-slate-900 block font-sans">YMS ASSESSMENT</span>
+                            <span id="paper-academy-display" class="font-bold text-[11px] text-slate-600 tracking-wider">YMS 어학원</span>
                         </div>
-                        <div class="text-right">
-                            <span id="paper-date-display" class="text-[10px] font-bold text-slate-400 tracking-wider block">2026. 06</span>
-                            <span class="text-[9px] bg-slate-900 text-white px-1.5 py-0.5 rounded font-mono font-bold mt-1 inline-block">MONTHLY EVALUATION</span>
+                        
+                        <!-- 스코어보드/결재란 메타 테이블 -->
+                        <div class="w-48 text-[10px] border border-slate-900 grid grid-cols-3 text-center divide-x divide-slate-900">
+                            <div class="divide-y divide-slate-900">
+                                <div class="bg-slate-50 py-1 font-bold text-slate-700">과목명</div>
+                                <div id="paper-subject-display" class="py-2 font-semibold truncate px-1">영어</div>
+                            </div>
+                            <div class="divide-y divide-slate-900">
+                                <div class="bg-slate-50 py-1 font-bold text-slate-700">결재/확인</div>
+                                <div class="py-2 text-slate-300">인</div>
+                            </div>
+                            <div class="divide-y divide-slate-900">
+                                <div class="bg-slate-50 py-1 font-bold text-rose-700">총 득점</div>
+                                <div class="py-2 font-bold text-rose-600 text-xs">/ 100</div>
+                            </div>
                         </div>
                     </div>
                     
-                    <h2 id="paper-title-display" class="text-center font-black text-2xl tracking-tight my-5 text-slate-900 font-serif">
-                        6월 중등부 영어 학업성취도 평가
+                    <!-- 동적 출력되는 타이틀 명칭 영역 -->
+                    <h2 id="paper-title-display" class="text-center font-extrabold text-2xl tracking-tight my-6 text-slate-900 font-serif">
+                        Premium Monthly Evaluation
                     </h2>
                     
-                    <div class="flex justify-between items-center bg-slate-50 border border-slate-200 rounded-lg p-2 text-[11px] font-medium">
-                        <div class="w-1/3 text-left pl-2">
-                            <span>YMS Premium Assessment</span>
+                    <div class="flex justify-between items-center bg-slate-50 border border-slate-200 rounded-lg p-2 text-[11px] font-medium font-sans">
+                        <div class="w-1/3 text-left pl-2 text-slate-500">
+                            <span>Official Examination Sheet</span>
                         </div>
                         <div class="w-2/3 text-right flex justify-end items-center gap-1">
+                            <span id="paper-date-display" class="text-slate-600 font-bold mr-4">2026. 06</span>
                             <span>Class: <span class="border-b border-slate-400 w-16 inline-block mr-3">&nbsp;</span></span>
                             <span>성명(Name): <span class="border-b border-slate-400 w-28 inline-block">&nbsp;</span></span>
                         </div>
@@ -474,7 +485,7 @@
 
                     <div id="break-reading"></div>
 
-                    <!-- Section 2: Reading Comprehension [UPDATED: 위 아래 직렬 배치] -->
+                    <!-- Section 2: Reading Comprehension -->
                     <div>
                         <h3 class="font-bold text-xs bg-slate-100 px-2 py-1.5 border-l-4 border-slate-900 mb-3 flex justify-between items-center">
                             <div class="flex flex-col">
@@ -554,7 +565,7 @@
     <!-- CORE SYSTEM ENGINE SCRIPT -->
     <script>
         var isPaperTeacherMode = false;
-        var currentLevel = localStorage.getItem('monthly_exam_level') || 'elementary_junior';
+        var currentLevel = localStorage.getItem('monthly_exam_level') || 'middle'; // 기본값 중등부로 매핑
         
         var vocabCount = parseInt(localStorage.getItem('monthly_exam_vocab_count')) || 15;
         var vocabType = localStorage.getItem('monthly_exam_vocab_type') || 'matching';
@@ -623,9 +634,7 @@
             const toast = document.getElementById('toast');
             document.getElementById('toast-text').innerText = text;
             toast.className = toast.className.replace('translate-y-20 opacity-0', 'translate-y-0 opacity-100');
-            setTimeout(() => {
-                toast.className = toast.className.replace('translate-y-0 opacity-100', 'translate-y-20 opacity-0');
-            }, 3000);
+            setTimeout(() => { toast.className = toast.className.replace('translate-y-0 opacity-100', 'translate-y-20 opacity-0'); }, 3000);
         }
 
         function openModal(title, msg) {
@@ -640,17 +649,27 @@
             document.getElementById('custom-modal').classList.add('hidden');
         }
 
+        /* 🔄 [FEATURE UPDATED]: 지정해주신 영어 평가 명칭 자동 스위칭 가동 기어 */
         function changeLevel(level) {
             currentLevel = level;
             localStorage.setItem('monthly_exam_level', level);
-            let kName = level === 'elementary_junior' ? "초등 저학년(2~4학년)" : level === 'elementary' ? "초등 고학년(5~6학년)" : "중등부";
-            document.getElementById('config-title').value = `6월 ${kName} 영어 학업성취도 평가`;
+            
+            // 영어 명칭 할당부
+            let englishExamName = "Premium Monthly Evaluation";
+            if (level === 'elementary_junior' || level === 'elementary') {
+                englishExamName = "Monthly Growth Challenge";
+            }
+            
+            document.getElementById('config-title').value = englishExamName;
             updateSidebarLevelButtons();
+            
             examData = JSON.parse(JSON.stringify(defaultExamData[level] || defaultExamData['elementary_junior']));
             localStorage.removeItem('monthly_exam_v3_data');
+            
             initializeEditorInputs();
             syncHeaderData();
             renderPaperPreview();
+            showToast(`대제목이 [ ${englishExamName} ] 으로 설정되었습니다.`);
         }
 
         function updateSidebarLevelButtons() {
@@ -697,7 +716,7 @@
 
             document.getElementById('paper-academy-display').innerText = academy;
             document.getElementById('paper-title-display').innerText = title;
-            document.getElementById('paper-subject-display').innerText = `과목: ${subject}`;
+            document.getElementById('paper-subject-display').innerText = subject;
             document.getElementById('paper-date-display').innerText = date;
 
             const readingQuestionsCount = readingCount * 3;
@@ -745,10 +764,10 @@
         function switchEditorTab(tab) {
             ['vocab', 'reading', 'translation', 'unscramble'].forEach(t => {
                 document.getElementById(`tab-${t}`).className = "px-3 py-1.5 text-xs font-semibold text-slate-400 hover:text-white rounded-t-md";
-                document.getElementById(`panel-${t}`).classList.add('hidden');
+                document.getElementById('panel-' + t).classList.add('hidden');
             });
             document.getElementById(`tab-${tab}`).className = "px-3 py-1.5 text-xs font-semibold text-white border-b-2 border-indigo-500 bg-slate-800 rounded-t-md";
-            document.getElementById(`panel-${tab}`).classList.remove('hidden');
+            document.getElementById('panel-' + tab).classList.remove('hidden');
         }
 
         function handleVocabEngPaste(e) {
@@ -784,7 +803,6 @@
             renderPaperPreview(); showToast("독해 지문이 반영되었습니다.");
         }
 
-        /* 🔄 [CRITICAL FIX]: 영한해석 동적 데이터 바인딩 로직 보완 */
         function applyTranslationChange() {
             const lines = document.getElementById('edit-translation').value.trim().split('\n');
             const arr = [];
@@ -796,13 +814,12 @@
             if(arr.length > 0) {
                 examData.translation = arr;
                 renderPaperPreview();
-                showToast("영한해석 텍스트 데이터가 프리뷰에 반영되었습니다.");
+                showToast("영한해석 데이터가 반영되었습니다.");
             } else {
                 openModal("포맷 확인", "줄마다 문장 입력 시 문장 구조 '영어=한글뜻'을 유지해 주세요.");
             }
         }
 
-        /* 🔄 [CRITICAL FIX]: 어순배열 동적 데이터 바인딩 로직 보완 */
         function applyUnscrambleChange() {
             const lines = document.getElementById('edit-unscramble').value.trim().split('\n');
             const arr = [];
@@ -814,7 +831,7 @@
             if(arr.length > 0) {
                 examData.unscramble = arr;
                 renderPaperPreview();
-                showToast("어순배열 핵심 문장 데이터가 프리뷰에 반영되었습니다.");
+                showToast("어순배열 데이터가 반영되었습니다.");
             } else {
                 openModal("포맷 확인", "줄마다 문장 입력 시 문장 구조 '영어문장=한국어힌트'를 유지해 주세요.");
             }
@@ -823,7 +840,6 @@
         function saveToLocalStorage() { localStorage.setItem('monthly_exam_v3_data', JSON.stringify(examData)); showToast("캐시에 저장되었습니다."); }
         function resetToDemo() { examData = JSON.parse(JSON.stringify(defaultExamData[currentLevel])); initializeEditorInputs(); renderPaperPreview(); }
 
-        // RENDER LIVE PREVIEW
         function renderPaperPreview() {
             if (!examData) return;
             const printSheet = document.getElementById('print-sheet');
@@ -854,7 +870,7 @@
                 });
             }
 
-            // 2. Reading Section [UPDATED LAYOUT: 위 지문 - 아래 문제 수직 직렬 구조]
+            // 2. Reading Section
             const rList = document.getElementById('paper-reading-list'); rList.innerHTML = '';
             const activeReading = [...(examData.reading || []).slice(0, readingCount)];
             activeReading.forEach((pass, pIdx) => {
@@ -881,12 +897,10 @@
                 });
 
                 passBlock.innerHTML = `
-                    <!-- 상단: 지문 전체 가로 배치 -->
                     <div class="bg-slate-50 p-4 border border-slate-200 rounded-xl text-[11.5px] font-serif leading-relaxed italic text-slate-800 relative">
                         <span class="font-bold text-indigo-900 not-italic block mb-2 text-xs"><i class="fa-solid fa-book-open text-indigo-600 mr-1"></i> [지문 및 독해 본문 ${pIdx+1}]</span>
                         ${pass.passage}
                     </div>
-                    <!-- 하단: 지문 매칭 문제 수직 출력 -->
                     <div class="space-y-3 pt-2 divide-y border-t border-slate-100">${qHtml}</div>
                 `;
                 rList.appendChild(passBlock);
@@ -954,8 +968,8 @@
         }
 
         function togglePageBreak(elementId) {
-            const el = document.getElementById(elementId); const btn = document.getElementById(`btn-${elementId}`);
-            if(!el || !btn) return;
+            const el = document.getElementById(elementId);
+            if(!el) return;
             if(el.classList.contains('print-page-break')) {
                 el.className = ""; el.innerHTML = "";
             } else {
@@ -1023,7 +1037,12 @@
             if (cached) examData = JSON.parse(cached);
             else examData = JSON.parse(JSON.stringify(defaultExamData[currentLevel]));
             
+            // 초기 타이틀 세팅 동기화 기어
+            let initialExamName = currentLevel === 'middle' ? "Premium Monthly Evaluation" : "Monthly Growth Challenge";
+            document.getElementById('config-title').value = initialExamName;
+
             syncCountControls();
+            updateSidebarLevelButtons();
             initializeEditorInputs();
             syncHeaderData();
             renderPaperPreview();
