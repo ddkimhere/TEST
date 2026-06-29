@@ -113,6 +113,14 @@
                 print-color-adjust: exact !important;
             }
         }
+@media print {
+            header, .no-print { display: none !important; }
+            /* 독해 영역 강제 페이지 넘김 */
+            #reading-section-wrapper { page-break-before: always !important; break-before: page !important; }
+            /* 답지 인쇄 보이게 설정 */
+            .teacher-answer { color: #dc2626 !important; display: block !important; }
+        }
+        .sentence-block { display: block; margin-bottom: 0.5rem; }
     </style>
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-800 pb-16 transition-colors duration-300">
