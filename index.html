@@ -679,20 +679,19 @@
             }
         }
 
-      function applyVocabChange() {
-    const engs = document.getElementById('edit-vocab-eng').value.split('\n');
-    const kors = document.getElementById('edit-vocab-kor').value.split('\n');
-    let arr = [];
-    for (let i = 0; i < Math.max(engs.length, kors.length); i++) {
-        if ((engs[i]||"").trim() || (kors[i]||"").trim()) {
-            arr.push({ word: (engs[i]||"").trim(), mean: (kors[i]||"").trim() });
+     function applyVocabChange() {
+            const engs = document.getElementById('edit-vocab-eng').value.split('\n');
+            const kors = document.getElementById('edit-vocab-kor').value.split('\n');
+            let arr = [];
+            for (let i = 0; i < Math.max(engs.length, kors.length); i++) {
+                if ((engs[i]||"").trim() || (kors[i]||"").trim()) {
+                    arr.push({ word: (engs[i]||"").trim(), mean: (kors[i]||"").trim() });
+                }
+            }
+            examData.vocab = shuffleArray(arr); 
+            renderPaperPreview();
+            showToast("단어가 무작위로 섞여 반영되었습니다.");
         }
-    }
-    // [추가된 부분] 셔플 함수 호출
-    examData.vocab = shuffleArray(arr); 
-    renderPaperPreview(); 
-    showToast("단어가 무작위로 섞여 반영되었습니다.");
-}
         function applyReadingChange() {
             for (let p = 0; p < readingCount; p++) {
                 if(document.getElementById(`edit-passage-${p}`)) {
@@ -988,6 +987,26 @@ JSON 구조 리턴:
             syncHeaderData();
             renderPaperPreview();
         };
+        // [기능 1] 인쇄
+        function triggerPrint() { window.print(); }
+
+        // [기능 2] 랜덤 셔플
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // [기능 3] 지문 문장 분리
+        function splitSentences(text) {
+            if (!text) return "";
+            return text.replace(/([.?!])\s*(?=[A-Z])/g, '$1|SEP|')
+                       .split('|SEP|')
+                       .map(s => `<span class="sentence-block">${s.trim()}</span>`)
+                       .join('');
+        }
     </script>
 </body>
 </html>
