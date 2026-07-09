@@ -113,12 +113,12 @@
                 print-color-adjust: exact !important;
             }
         }
-@media print {
-            header, .no-print { display: none !important; }
-            /* 독해 영역 강제 페이지 넘김 */
-            #reading-section-wrapper { page-break-before: always !important; break-before: page !important; }
-            /* 답지 인쇄 보이게 설정 */
+/* [중요] 인쇄 설정 */
+        @media print {
+            header, .no-print, #ai-loading-overlay { display: none !important; }
+            .paper-preview { box-shadow: none !important; border: none !important; width: 100% !important; margin: 0 !important; }
             .teacher-answer { display: block !important; color: #dc2626 !important; }
+            #paper-reading-list { page-break-before: always !important; break-before: page !important; }
         }
         .sentence-block { display: block; margin-bottom: 0.5rem; }
     </style>
@@ -634,20 +634,12 @@
         function changeUnscrambleCount(val) { unscrambleCount = parseInt(val) || 5; syncCountControls(); syncHeaderData(); renderPaperPreview(); }
         function toggleTeacherDrawer() { document.getElementById('teacher-drawer').classList.toggle('hidden'); }
         // [답지 보기 기능] 이 함수가 없어서 버튼이 안 눌렸던 것입니다.
-        function togglePaperAnswerView(isTeacher) {
+       function togglePaperAnswerView(isTeacher) {
             isPaperTeacherMode = isTeacher;
-    
-            // 버튼 모양과 색상을 바꿔주는 로직 (학생용/교사용)
-            document.getElementById('paper-btn-student').className = isTeacher ? 
-            "py-1.5 bg-slate-100 text-slate-700 font-semibold text-xs rounded transition" : 
-            "py-1.5 bg-indigo-600 text-white font-bold text-xs rounded transition shadow";
-            document.getElementById('paper-btn-teacher').className = isTeacher ? 
-            "py-1.5 bg-indigo-600 text-white font-bold text-xs rounded transition shadow" : 
-            "py-1.5 bg-slate-100 text-slate-700 font-semibold text-xs rounded transition";
-            // 화면을 새로 그려서 정답을 보여주거나 숨깁니다.
-        renderPaperPreview();
-        showToast(isTeacher ? "교사용 정답지 모드입니다." : "학생용 시험지 모드입니다.");
+            renderPaperPreview(); // 화면 갱신
+            showToast(isTeacher ? "교사용 정답지 모드입니다." : "학생용 시험지 모드입니다.");
         }
+  
         function saveApiKey(val) { apiKey = val.trim(); localStorage.setItem('monthly_exam_api_key', apiKey); }
         function formatScore(num) { return Number.isInteger(num) ? num.toFixed(0) : num.toFixed(1); }
 
