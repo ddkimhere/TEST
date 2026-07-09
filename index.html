@@ -634,11 +634,20 @@
         function changeTranslationCount(val) { translationCount = parseInt(val) || 5; syncCountControls(); syncHeaderData(); renderPaperPreview(); }
         function changeUnscrambleCount(val) { unscrambleCount = parseInt(val) || 5; syncCountControls(); syncHeaderData(); renderPaperPreview(); }
         function toggleTeacherDrawer() { document.getElementById('teacher-drawer').classList.toggle('hidden'); }
+        // [답지 보기 기능] 이 함수가 없어서 버튼이 안 눌렸던 것입니다.
         function togglePaperAnswerView(isTeacher) {
-    isPaperTeacherMode = isTeacher;
-    // 이 한 줄이 추가되어야 화면이 바뀝니다!
-    renderPaperPreview(); 
-}
+            isPaperTeacherMode = isTeacher;
+           // 버튼 모양과 색상을 바꿔주는 로직 (학생용/교사용)
+            document.getElementById('paper-btn-student').className = isTeacher ? 
+            "py-1.5 bg-slate-100 text-slate-700 font-semibold text-xs rounded transition" : 
+            "py-1.5 bg-indigo-600 text-white font-bold text-xs rounded transition shadow";
+            document.getElementById('paper-btn-teacher').className = isTeacher ? 
+            "py-1.5 bg-indigo-600 text-white font-bold text-xs rounded transition shadow" : 
+            "py-1.5 bg-slate-100 text-slate-700 font-semibold text-xs rounded transition";
+           // 화면을 새로 그려서 정답을 보여주거나 숨깁니다.
+            renderPaperPreview();
+            showToast(isTeacher ? "교사용 정답지 모드입니다." : "학생용 시험지 모드입니다.");
+        }
         function saveApiKey(val) { apiKey = val.trim(); localStorage.setItem('monthly_exam_api_key', apiKey); }
         function formatScore(num) { return Number.isInteger(num) ? num.toFixed(0) : num.toFixed(1); }
 
