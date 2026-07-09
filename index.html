@@ -632,7 +632,15 @@
         function changeReadingCount(val) { readingCount = parseInt(val) || 1; syncCountControls(); syncHeaderData(); initializeEditorInputs(); renderPaperPreview(); }
         function changeTranslationCount(val) { translationCount = parseInt(val) || 5; syncCountControls(); syncHeaderData(); renderPaperPreview(); }
         function changeUnscrambleCount(val) { unscrambleCount = parseInt(val) || 5; syncCountControls(); syncHeaderData(); renderPaperPreview(); }
-        function toggleTeacherDrawer() { document.getElementById('teacher-drawer').classList.toggle('hidden'); }
+        function togglePaperAnswerView(isTeacher) {
+    isPaperTeacherMode = isTeacher;
+    // [중요 추가] 아래 줄이 있어야 버튼을 누르자마자 화면이 바뀝니다.
+    renderPaperPreview(); 
+    
+    // 버튼 색상 업데이트 (UI 피드백)
+    document.getElementById('paper-btn-student').className = isTeacher ? "py-1.5 bg-slate-100 text-slate-700 font-semibold text-xs rounded transition" : "py-1.5 bg-indigo-600 text-white font-bold text-xs rounded transition shadow";
+    document.getElementById('paper-btn-teacher').className = isTeacher ? "py-1.5 bg-indigo-600 text-white font-bold text-xs rounded transition shadow" : "py-1.5 bg-slate-100 text-slate-700 font-semibold text-xs rounded transition";
+}
         function saveApiKey(val) { apiKey = val.trim(); localStorage.setItem('monthly_exam_api_key', apiKey); }
         function formatScore(num) { return Number.isInteger(num) ? num.toFixed(0) : num.toFixed(1); }
 
