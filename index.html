@@ -74,6 +74,7 @@
 
         /* Print media styles */
         @media print {
+            
             body {
                 background: white !important;
                 color: black !important;
@@ -633,6 +634,11 @@
         function changeTranslationCount(val) { translationCount = parseInt(val) || 5; syncCountControls(); syncHeaderData(); renderPaperPreview(); }
         function changeUnscrambleCount(val) { unscrambleCount = parseInt(val) || 5; syncCountControls(); syncHeaderData(); renderPaperPreview(); }
         function toggleTeacherDrawer() { document.getElementById('teacher-drawer').classList.toggle('hidden'); }
+        function togglePaperAnswerView(isTeacher) {
+    isPaperTeacherMode = isTeacher;
+    // 이 한 줄이 추가되어야 화면이 바뀝니다!
+    renderPaperPreview(); 
+}
         function saveApiKey(val) { apiKey = val.trim(); localStorage.setItem('monthly_exam_api_key', apiKey); }
         function formatScore(num) { return Number.isInteger(num) ? num.toFixed(0) : num.toFixed(1); }
 
