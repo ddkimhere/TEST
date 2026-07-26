@@ -235,7 +235,7 @@
                         <span class="text-indigo-400 font-bold"><i class="fa-solid fa-key mr-1 text-amber-400"></i> Gemini API Key 설정</span>
                         <a href="https://aistudio.google.com/" target="_blank" class="text-[10px] text-slate-400 hover:text-indigo-400 transition">무료 발급받기</a>
                     </label>
-                    <input type="password" id="config-api-key" oninput="saveApiKey(this.value)" value="AQ.Ab8RN6KvtMi5trvzk5__MPYLg2xmsReIXQfgu0LANXc2vQ74xA" class="w-full bg-slate-800 border border-slate-700 rounded px-2.5 py-1.5 text-white text-[11px] font-mono">
+                    <input type="password" id="config-api-key" oninput="saveApiKey(this.value)" placeholder="AI Studio의 API Key를 입력하세요..." class="w-full bg-slate-800 border border-slate-700 rounded px-2.5 py-1.5 text-white text-[11px] font-mono">
                 </div>
             </div>
 
@@ -529,7 +529,7 @@
         var unscrambleCount = parseInt(localStorage.getItem('monthly_exam_unscramble_count')) || 5;
         
         var examData = null;
-        var apiKey = 'AQ.Ab8RN6KvtMi5trvzk5__MPYLg2xmsReIXQfgu0LANXc2vQ74xA';
+        var apiKey = localStorage.getItem('monthly_exam_api_key') || '';
 
         const defaultExamData = {
             elementary_junior: { vocab: [], reading: [], translation: [], unscramble: [] },
@@ -935,103 +935,63 @@
             }
         }
 
-      /* 🔄 [CRITICAL FIX]: 전체 지문 AI 일괄 출제 안정성 강화 */
-async function generateAIQuestionsAllPassages() {
-    const passages = [];
-    for (let i = 0; i < readingCount; i++) {
-        const txt = document.getElementById(`edit-passage-${i}`)?.value.trim() || "";
-        // 🚨 수정 포인트 1: 글자수가 너무 적거나 빈 지문은 AI에게 보내지 않고 필터링합니다.
-        if (txt.length > 15) {
-            passages.push({ id: i, text: txt });
-        }
-    }
-    
-    if (!apiKey) {
-        openModal("API Key 필요", "우측 상단 톱니바퀴 메뉴에서 Gemini API Key를 먼저 입력해주세요.");
-        return;
-    }
-    
-    if (passages.length === 0) {
-        openModal("알림", "AI가 문제를 출제할 영어 본문(Passage)이 최소 1개 이상 입력되어야 합니다.");
-        return;
-    }
+        /* 🔄 [CRITICAL FIX]: 전체 지문 AI 일괄 출제 시에도 각 지문 본문 유지 연동 교정 */
+        async function generateAIQuestionsAllPassages() {
+            const passages = [];
+            for (let i = 0; i < readingCount; i++) {
+                const txt = document.getElementById(`edit-passage-${i}`)?.value.trim() || "";
+                passages.push({ id: i, text: txt });
+            }
+            if (!apiKey) return;
+            
+            const overlay = document.getElementById('ai-loading-overlay'); 
+            overlay.classList.remove('hidden');
+            
+            let systemRule = currentLevel === 'middle' ?
+                `중등부 모의고사 기출 스타일. 지문당 출제되는 3문제 중 1문항은 반드시 완벽한 영어 질문과 영어 답안을 요구하는 서술형 주관식("type": "descriptive")이어야 합니다. 나머지 2문항은 적절한 수능 유형 객관식으로 자동 분배하세요.` :
+                `초등부 어학원 스타일. 모든 문제의 질문 및 객관식 보기 5개는 세련된 영어(English)로 작성되어야 합니다. 지문당 3문제 중 1문항은 반드시 영어 질문과 영어 답안을 요구하는 주관식 서술형이어야 합니다.`;
 
-    const overlay = document.getElementById('ai-loading-overlay'); 
-    overlay.classList.remove('hidden');
-
-    let systemRule = currentLevel === 'middle' ?
-        `중등부 모의고사 기출 스타일. 지문당 출제되는 3문제 중 1문항은 반드시 완벽한 영어 질문과 영어 답안을 요구하는 서술형 주관식("type": "descriptive")이어야 합니다. 나머지 2문항은 적절한 수능 유형 객관식으로 자동 분배하세요.` :
-        `초등부 어학원 스타일. 모든 문제의 질문 및 객관식 보기 5개는 세련된 영어(English)로 작성되어야 합니다. 지문당 3문제 중 1문항은 반드시 영어 질문과 영어 답안을 요구하는 주관식 서술형이어야 합니다.`;
-
-    const prompt = `각 지문별로 최적의 3문항씩 총 ${passages.length * 3}문항을 자동 분배 생성하세요.
+            const prompt = `각 지문별로 최적의 3문항씩 총 ${readingCount * 3}문항을 자동 분배 생성하세요.
 출제 기준: ${systemRule}
 ⚠️ 문제 문장 내부나 어디에도 유형 분류명(예: [요지], [서술])을 문자열로 노출하지 마세요.
-⚠️ 반드시 순수한 JSON 객체만 출력하고 마크다운(\`\`\`) 기호는 절대 쓰지 마세요.
 
 JSON 구조 리턴: 
 {"reading":[{"passageId":0,"questions":[{"q":"질문","type":"mcq|descriptive","questionCategory":"","choices":["1","2","3","4","5"],"answer":1,"answerText":""}]}]}
 
 지문 목록 데이터 세트: \n ${JSON.stringify(passages)}`;
 
-    const result = await makeGeminiCallWithRetry({ 
-        contents: [{ parts: [{ text: prompt }] }], 
-        generationConfig: { responseMimeType: "application/json" } 
-    });
-    
-    overlay.classList.add('hidden');
-    
-    if (result) {
-        try {
-            // 🚨 수정 포인트 2: AI가 혹시라도 ```json ... ``` 마크다운을 붙여서 보내면 깔끔하게 제거합니다.
-            const cleanResult = result.replace(/```json/gi, '').replace(/```/g, '').trim();
-            const parsed = JSON.parse(cleanResult);
-            
-            parsed.reading.forEach(item => {
-                const pId = item.passageId;
-                const actualText = document.getElementById(`edit-passage-${pId}`)?.value.trim() || "";
-                examData.reading[pId] = {
-                    passage: actualText,
-                    questions: item.questions
-                };
-            });
-            initializeEditorInputs(); 
-            syncHeaderData(); 
-            renderPaperPreview();
-            showToast("성공적으로 AI 독해 문제가 생성 및 매핑되었습니다.");
-            
-        } catch (e) { 
-            console.log("JSON 파싱 에러:", e, "\nAI 원본 응답:", result); 
-            openModal("AI 일괄 처리 오류", "AI가 올바르지 않은 형식을 반환했습니다. '일괄 생성' 버튼을 다시 한 번 눌러주세요."); 
-        }
-    } else {
-        openModal("네트워크 오류", "AI 서버와 통신하지 못했습니다. API Key나 네트워크 상태를 확인하세요.");
-    }
-}
-
-async function makeGeminiCallWithRetry(payload) {
-    let attempt = 0;
-    while (attempt < 3) {
-        try {
-            // 🚨 수정 포인트 3: 안정적이고 빠르며 최신인 gemini-2.0-flash 로 모델명을 수정했습니다.
-            const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + apiKey, {
-                method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload)
-            });
-            const json = await response.json();
-            
-            // API 키가 틀리거나 할당량 초과 시의 에러 처리
-            if(json.error) {
-                console.error("Gemini API Error:", json.error);
-                return null;
+            const result = await makeGeminiCallWithRetry({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json" } });
+            overlay.classList.add('hidden');
+            if (result) {
+                try {
+                    const parsed = JSON.parse(result);
+                    parsed.reading.forEach(item => {
+                        const pId = item.passageId;
+                        // [해결] 에디터에 적혀있던 실제 지문 텍스트(passages)를 보존하여 결과 매핑 처리
+                        const actualText = document.getElementById(`edit-passage-${pId}`)?.value.trim() || "";
+                        examData.reading[pId] = {
+                            passage: actualText,
+                            questions: item.questions
+                        };
+                    });
+                    initializeEditorInputs(); syncHeaderData(); renderPaperPreview();
+                } catch (e) { console.log(e); openModal("AI 일괄 처리 오류", "파싱 오류 발생. 다시 생성 마법을 작동해 주세요."); }
             }
-            
-            return json.candidates?.[0]?.content?.parts?.[0]?.text;
-        } catch (e) { 
-            attempt++; 
-            console.log(`API 호출 재시도 중... (${attempt}/3)`);
         }
-    }
-    return null;
-}
+
+        async function makeGeminiCallWithRetry(payload) {
+            let attempt = 0;
+            while (attempt < 3) {
+                try {
+                    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + apiKey, {
+                        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload)
+                    });
+                    const json = await response.json();
+                    return json.candidates?.[0]?.content?.parts?.[0]?.text;
+                } catch (e) { attempt++; }
+            }
+            return null;
+        }
 
         window.onload = function() {
             const cached = localStorage.getItem('monthly_exam_v3_data');
