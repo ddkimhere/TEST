@@ -181,7 +181,7 @@
                 </h2>
             </div>
             
-            <div class="grid grid-cols-2 md:grid-cols-7 gap-3 text-xs">
+            <div class="grid grid-cols-2 md:grid-cols-8 gap-3 text-xs">
                 <div class="md:col-span-1">
                     <label class="block text-slate-400 font-medium mb-1">대상 학년 레벨</label>
                     <select id="config-level" onchange="changeLevel(this.value)" class="w-full bg-slate-800 border border-slate-700 rounded px-2.5 py-1.5 text-white focus:outline-none focus:border-indigo-500 font-bold text-amber-400">
@@ -206,6 +206,14 @@
                 <div class="md:col-span-1">
                     <label class="block text-slate-400 font-medium mb-1">독해 지문수</label>
                     <input type="number" id="config-reading-count" value="5" min="1" max="5" oninput="changeReadingCount(this.value)" class="w-full bg-slate-800 border border-slate-700 rounded px-2.5 py-1.5 text-white font-bold">
+                </div>
+                <div class="md:col-span-1">
+                    <label class="block text-slate-400 font-medium mb-1">독해 문제 난이도</label>
+                    <select id="config-reading-difficulty" onchange="changeReadingDifficulty(this.value)" class="w-full bg-slate-800 border border-slate-700 rounded px-2.5 py-1.5 text-white font-bold text-amber-400">
+                        <option value="easy">쉬움</option>
+                        <option value="normal" selected>보통</option>
+                        <option value="hard">어려움</option>
+                    </select>
                 </div>
                 <div class="md:col-span-1">
                     <label class="block text-slate-400 font-medium mb-1">영한해석 문항수</label>
@@ -351,6 +359,15 @@
                                 <input type="range" id="sidebar-range-reading" min="1" max="5" step="1" value="5" oninput="changeReadingCount(this.value)" class="w-full accent-indigo-600">
                                 <span id="sidebar-val-reading" class="text-xs font-bold text-indigo-600 w-8 text-right">5개</span>
                             </div>
+                        </div>
+
+                        <div class="space-y-1">
+                            <label class="block text-[10px] text-slate-500 font-bold">독해 문제 난이도</label>
+                            <select id="sidebar-reading-difficulty" onchange="changeReadingDifficulty(this.value)" class="w-full bg-white border rounded p-1.5 text-xs font-semibold text-slate-700">
+                                <option value="easy">쉬움 — 내용 확인 중심</option>
+                                <option value="normal" selected>보통 — 이해·추론 균형</option>
+                                <option value="hard">어려움 — 추론·변별 중심</option>
+                            </select>
                         </div>
 
                         <div class="space-y-1">
@@ -525,6 +542,7 @@
         var vocabCount = parseInt(localStorage.getItem('monthly_exam_vocab_count')) || 15;
         var vocabType = localStorage.getItem('monthly_exam_vocab_type') || 'matching';
         var readingCount = parseInt(localStorage.getItem('monthly_exam_reading_count')) || 1;
+        var readingDifficulty = localStorage.getItem('monthly_exam_reading_difficulty') || 'normal';
         var translationCount = parseInt(localStorage.getItem('monthly_exam_translation_count')) || 5;
         var unscrambleCount = parseInt(localStorage.getItem('monthly_exam_unscramble_count')) || 5;
         
@@ -619,6 +637,8 @@
             document.getElementById('config-reading-count').value = readingCount;
             document.getElementById('sidebar-range-reading').value = readingCount;
             document.getElementById('sidebar-val-reading').innerText = readingCount + '개';
+            document.getElementById('config-reading-difficulty').value = readingDifficulty;
+            document.getElementById('sidebar-reading-difficulty').value = readingDifficulty;
             document.getElementById('config-translation-count').value = translationCount;
             document.getElementById('sidebar-range-translation').value = translationCount;
             document.getElementById('sidebar-val-translation').innerText = translationCount + '개';
@@ -630,6 +650,13 @@
         function changeVocabCount(val) { vocabCount = parseInt(val) || 5; syncCountControls(); syncHeaderData(); renderPaperPreview(); }
         function changeVocabType(val) { vocabType = val; syncCountControls(); renderPaperPreview(); }
         function changeReadingCount(val) { readingCount = parseInt(val) || 1; syncCountControls(); syncHeaderData(); initializeEditorInputs(); renderPaperPreview(); }
+        function changeReadingDifficulty(val) {
+            readingDifficulty = ['easy', 'normal', 'hard'].includes(val) ? val : 'normal';
+            localStorage.setItem('monthly_exam_reading_difficulty', readingDifficulty);
+            syncCountControls();
+            const labels = { easy: '쉬움', normal: '보통', hard: '어려움' };
+            showToast(`독해 문제 난이도: ${labels[readingDifficulty]}`);
+        }
         function changeTranslationCount(val) { translationCount = parseInt(val) || 5; syncCountControls(); syncHeaderData(); renderPaperPreview(); }
         function changeUnscrambleCount(val) { unscrambleCount = parseInt(val) || 5; syncCountControls(); syncHeaderData(); renderPaperPreview(); }
         function toggleTeacherDrawer() { document.getElementById('teacher-drawer').classList.toggle('hidden'); }
@@ -874,6 +901,30 @@
             }
         }
 
+      function getReadingDifficultyConfig() {
+    if (readingDifficulty === 'easy') {
+        return `선택 난이도: 쉬움
+        - 문제는 지문에 직접 제시된 정보 확인 중심으로 출제하세요.
+        - 내용일치, 세부정보, 명시적 주제/목적 등 정답 근거가 분명한 문항을 우선하세요.
+        - 복잡한 추론, 함축 의미, 고난도 빈칸 추론은 제외하세요.
+        - 오답 선택지는 지나치게 헷갈리게 만들지 말고, 지문 근거로 명확히 구분 가능하게 하세요.
+        - 서술형은 지문에서 근거를 찾아 1문장 정도로 답할 수 있게 하세요.`;
+    }
+    if (readingDifficulty === 'hard') {
+        return `선택 난이도: 어려움
+        - 지문 전체 맥락을 종합해야 풀 수 있는 추론·함축·빈칸·문맥상 의미 유형을 적극 활용하세요.
+        - 객관식 오답도 지문의 일부 표현과 연결되도록 설계해 변별력을 높이세요.
+        - 단순 문장 복사만으로 정답을 찾기 어렵게 하되, 반드시 지문 안의 근거만으로 해결 가능해야 합니다.
+        - 서술형은 핵심 내용을 재구성하거나 근거를 종합하여 영어로 답하게 하세요.
+        - 학년 수준을 벗어난 배경지식이나 지문에 없는 정보는 요구하지 마세요.`;
+    }
+    return `선택 난이도: 보통
+        - 직접 정보 확인과 간단한 추론을 균형 있게 섞으세요.
+        - 주제·요지·내용일치·세부정보·문맥상 어휘 등을 학년 수준에 맞게 분배하세요.
+        - 오답은 어느 정도 매력적이되 지문을 정확히 읽으면 구분 가능하게 하세요.
+        - 서술형은 지문의 핵심 근거를 활용해 1~2문장으로 답할 수 있게 하세요.`;
+}
+
       function getAIPromptSchema(targetTxt) {
     let levelConfig = "";
     
@@ -881,21 +932,28 @@
     if (currentLevel === 'middle') {
         levelConfig = `대상: 중등부 (중등 심화/수능 기초)
         - 유형: [주제, 요지, 목적, 내용일치, 어법, 빈칸추론] 등 수능 스타일.
-        - 난이도: 어휘와 문장 구조가 복잡하며, 논리적 추론이 필요한 유형 출제.`;
+        - 어휘와 문제 표현은 중학생이 학습 가능한 범위를 유지하세요.`;
     } else if (currentLevel === 'elementary') {
         levelConfig = `대상: 초등 고학년 (심화)
         - 유형: [주제 찾기, 내용일치, 세부사항 파악, 쉬운 어휘] 위주.
-        - 난이도: 문장 길이를 적절히 조절하고 이해하기 쉬운 문맥 사용.`;
+        - 질문과 선택지는 초등 고학년이 이해할 수 있는 영어를 사용하세요.`;
     } else {
         levelConfig = `대상: 초등 저학년 (기초)
         - 유형: [내용일치, 단어 매칭, 짧은 문장 이해].
-        - 난이도: 매우 직관적이고 쉬운 문장 위주, 복잡한 추론 제외.`;
+        - 질문과 선택지는 매우 짧고 직관적인 영어를 사용하세요.`;
     }
+
+    const difficultyConfig = getReadingDifficultyConfig();
 
     return `지문 본문: "${targetTxt}"
     
     [출제 가이드라인]:
     ${levelConfig}
+
+    [독해 문제 난이도]:
+    ${difficultyConfig}
+
+    중요: 지문 본문 자체는 절대 재작성하거나 쉽게/어렵게 바꾸지 마세요. 선택한 난이도는 오직 질문, 선택지, 요구되는 사고 수준으로 조절하세요.
     
     1. 총 3문항 출제 (1문항은 반드시 영어 질문/영어 답안의 서술형 주관식).
     2. 객관식 문항은 1~5번 정답 번호를 무조건 매번 무작위로 섞으세요 (정답 편중 절대 금지).
@@ -905,7 +963,7 @@
     결과는 오직 순수한 JSON 배열 포맷으로만 리턴하세요:
     [
       {
-        "q": "질문 (대상 학년 수준에 맞게)",
+        "q": "질문 (대상 학년 및 선택 난이도에 맞게)",
         "type": "mcq" | "descriptive",
         "choices": ["선택지1", "선택지2", "선택지3", "선택지4", "선택지5"],
         "answer": 1,
@@ -949,10 +1007,14 @@
             
             let systemRule = currentLevel === 'middle' ?
                 `중등부 모의고사 기출 스타일. 지문당 출제되는 3문제 중 1문항은 반드시 완벽한 영어 질문과 영어 답안을 요구하는 서술형 주관식("type": "descriptive")이어야 합니다. 나머지 2문항은 적절한 수능 유형 객관식으로 자동 분배하세요.` :
-                `초등부 어학원 스타일. 모든 문제의 질문 및 객관식 보기 5개는 세련된 영어(English)로 작성되어야 합니다. 지문당 3문제 중 1문항은 반드시 영어 질문과 영어 답안을 요구하는 주관식 서술형이어야 합니다.`;
+                `초등부 어학원 스타일. 모든 문제의 질문 및 객관식 보기 5개는 대상 학년에 맞는 자연스러운 영어(English)로 작성되어야 합니다. 지문당 3문제 중 1문항은 반드시 영어 질문과 영어 답안을 요구하는 주관식 서술형이어야 합니다.`;
+
+            const difficultyRule = getReadingDifficultyConfig();
 
             const prompt = `각 지문별로 최적의 3문항씩 총 ${readingCount * 3}문항을 자동 분배 생성하세요.
 출제 기준: ${systemRule}
+독해 문제 난이도 기준: ${difficultyRule}
+중요: 입력된 지문 본문 자체는 절대 재작성하거나 난이도에 맞춰 변형하지 말고, 질문·선택지·사고 수준만 조절하세요.
 ⚠️ 문제 문장 내부나 어디에도 유형 분류명(예: [요지], [서술])을 문자열로 노출하지 마세요.
 
 JSON 구조 리턴: 
