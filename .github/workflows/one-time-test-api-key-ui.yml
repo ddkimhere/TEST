@@ -1,0 +1,104 @@
+name: One-time TEST API key UI patch
+
+on:
+  push:
+    branches:
+      - chore/test-api-key-once-20260812
+    paths:
+      - .github/workflows/one-time-test-api-key-ui.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: chore/test-api-key-once-20260812
+
+      - name: Make Gemini API key a one-time browser setup
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path('index.html')
+          text = path.read_text(encoding='utf-8')
+
+          # Replace the always-visible API-key field with a one-time setup UI.
+          pattern = re.compile(r'<input\s+type="password"\s+id="config-api-key"\s+oninput="saveApiKey\(this\.value\)"\s+placeholder="AI Studio의 API Key를 입력하세요\.\.\."\s+class="[^"]+">')
+          replacement = '''<div id="api-key-entry" class="flex gap-2">
+                        <input type="password" id="config-api-key" placeholder="처음 한 번만 API Key를 입력하세요..." class="flex-1 bg-slate-800 border border-slate-700 rounded px-2.5 py-1.5 text-white text-[11px] font-mono">
+                        <button type="button" onclick="saveApiKeyFromInput()" class="shrink-0 bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-3 py-1.5 rounded text-[11px]">저장</button>
+                    </div>
+                    <div id="api-key-saved-state" style="display:none" class="w-full items-center justify-between gap-2 bg-emerald-950/40 border border-emerald-700 rounded px-3 py-2 text-[11px] text-emerald-300">
+                        <span><i class="fa-solid fa-circle-check mr-1"></i> API Key가 이 브라우저에 저장되어 있습니다.</span>
+                        <button type="button" onclick="changeSavedApiKey()" class="shrink-0 border border-emerald-700 hover:bg-emerald-900/50 px-2 py-1 rounded font-bold">변경</button>
+                    </div>'''
+          text, count = pattern.subn(replacement, text, count=1)
+          if count != 1:
+              raise SystemExit(f'Expected one API key input, found {count}')
+
+          old_fn = "function saveApiKey(val) { apiKey = val.trim(); localStorage.setItem('monthly_exam_api_key', apiKey); }"
+          new_fn = '''function updateApiKeyUI() {
+            const entry = document.getElementById('api-key-entry');
+            const input = document.getElementById('config-api-key');
+            const saved = document.getElementById('api-key-saved-state');
+            if (!entry || !input || !saved) return;
+            if (apiKey) {
+                input.value = '';
+                entry.style.display = 'none';
+                saved.style.display = 'flex';
+            } else {
+                entry.style.display = 'flex';
+                saved.style.display = 'none';
+            }
+        }
+
+        function saveApiKeyFromInput() {
+            const input = document.getElementById('config-api-key');
+            const clean = (input?.value || '').trim();
+            if (!clean) {
+                openModal('API Key 확인', 'Gemini API Key를 입력해주세요.');
+                return;
+            }
+            apiKey = clean;
+            localStorage.setItem('monthly_exam_api_key', apiKey);
+            input.value = '';
+            updateApiKeyUI();
+            showToast('Gemini API Key가 이 브라우저에 저장되었습니다.');
+        }
+
+        function changeSavedApiKey() {
+            localStorage.removeItem('monthly_exam_api_key');
+            apiKey = '';
+            updateApiKeyUI();
+            setTimeout(() => document.getElementById('config-api-key')?.focus(), 0);
+            showToast('저장된 API Key를 삭제했습니다. 새 키를 입력해주세요.');
+        }'''
+          if old_fn not in text:
+              raise SystemExit('Existing saveApiKey function was not found')
+          text = text.replace(old_fn, new_fn, 1)
+
+          old_onload = "window.onload = function() {"
+          if old_onload not in text:
+              raise SystemExit('window.onload was not found')
+          text = text.replace(old_onload, "window.onload = function() {\n            updateApiKeyUI();", 1)
+
+          path.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Remove one-time workflow
+        run: rm -f .github/workflows/one-time-test-api-key-ui.yml
+
+      - name: Commit patched source
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html .github/workflows/one-time-test-api-key-ui.yml
+          git commit -m "Make TEST API key a one-time browser setup"
+          git push origin HEAD:chore/test-api-key-once-20260812
