@@ -1,0 +1,46 @@
+name: One-time Gemini model patch
+
+on:
+  push:
+    branches:
+      - chore/gemini-cost-20260812
+    paths:
+      - .github/workflows/one-time-gemini-model-patch.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: chore/gemini-cost-20260812
+      - name: Switch to Gemini 3.1 Flash-Lite
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('index.html')
+          text = path.read_text(encoding='utf-8')
+          old = 'gemini-2.5-flash'
+          count = text.count(old)
+          if count < 1:
+              raise SystemExit('Expected Gemini 2.5 Flash model reference was not found')
+          text = text.replace(old, 'gemini-3.1-flash-lite')
+          text = text.replace('Gemini 2.5', 'Gemini 3.1 Flash-Lite')
+          text = text.replace('제미나이 2.5', '제미나이 3.1 Flash-Lite')
+          path.write_text(text, encoding='utf-8')
+          print(f'Updated {count} model reference(s)')
+          PY
+      - name: Remove one-time workflow
+        run: rm -f .github/workflows/one-time-gemini-model-patch.yml
+      - name: Commit patched source
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html .github/workflows/one-time-gemini-model-patch.yml
+          git commit -m "Switch test AI to Gemini 3.1 Flash-Lite"
+          git push origin HEAD:chore/gemini-cost-20260812
